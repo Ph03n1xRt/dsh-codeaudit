@@ -5,9 +5,11 @@
 # single tarball via `dsh plugin add`.
 #
 # The patch contributes three things:
-# 1. the sqlite backend row (the official @deepseek-ai/dsh-storage-sqlite
-#    package, declared as a dependency of this bundle so `dsh plugin add`
-#    installs it);
+# 1. the sqlite backend row — this bundle's OWN vendored copy of the
+#    official layout, registered under the PRIVATE backend name
+#    `codeaudit-sqlite` with a unique row id, so dsh-codeaudit and
+#    dsh-pentest can coexist in one profile (a shared row id or backend
+#    name collides when both patches apply);
 # 2. the Web surface row (the per-session 代码审计 view tab), whose client face
 #    is the package's `./client` export;
 # 3. a storage-domain route selecting the sqlite backend for the `codeaudit`
@@ -22,8 +24,8 @@
     - id: ui-codeaudit
       name: 'dsh-codeaudit/ui-codeaudit'
 
-    - id: storage-sqlite
-      name: '@deepseek-ai/dsh-storage-sqlite'
+    - id: codeaudit-storage-sqlite
+      name: 'dsh-codeaudit/storage-sqlite'
       config:
         path: !!js dshHomePath('storages', 'codeaudit-sessions.db')
 
@@ -31,7 +33,7 @@
   config:
     backend: json
     routes:
-      codeaudit: sqlite
+      codeaudit: codeaudit-sqlite
 
 # DSH rc.6 replaces this row's configured roots with its bundled preset root
 # during profile composition. `preset-root` adds this package's read-only root

@@ -134,6 +134,7 @@ async function main() {
     ['src/invariant.ts', 'lib/invariant.js'],
     ['src/preset-root.ts', 'lib/preset-root.js'],
     ['src/dsh-codeaudit/src/index.ts', 'lib/codeaudit.js'],
+    ['src/storage-sqlite.ts', 'lib/storage-sqlite.js'],
     ['src/dsh-client-ui-codeaudit/src/index.ts', 'lib/ui-codeaudit.js'],
   ]
   for (const [entry, outfile] of nodeEntries) {

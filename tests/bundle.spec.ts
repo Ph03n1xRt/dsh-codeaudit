@@ -33,16 +33,16 @@ describe('dsh-codeaudit bundle', () => {
     expect(insert).toBeDefined()
     const rows = (insert!['insert'] as Array<{ id: string; name: string }>).map(row => ({ id: row.id, name: row.name }))
     // The UI row resolves to a subpath of this self-contained bundle package;
-    // the sqlite backend is the official dsh package, installed as a dependency.
+    // the sqlite backend is this bundle's own vendored copy under a private name.
     expect(rows).toEqual([
       { id: 'ui-codeaudit', name: 'dsh-codeaudit/ui-codeaudit' },
-      { id: 'storage-sqlite', name: '@deepseek-ai/dsh-storage-sqlite' },
+      { id: 'codeaudit-storage-sqlite', name: 'dsh-codeaudit/storage-sqlite' },
     ])
     const insertedRows = insert!['insert'] as Array<{ id: string; name?: string; config?: { path?: string } }>
-    const sqlite = insertedRows.find(row => row.id === 'storage-sqlite')!
+    const sqlite = insertedRows.find(row => row.id === 'codeaudit-storage-sqlite')!
     expect(sqlite.config).toEqual({ path: "dshHomePath('storages', 'codeaudit-sessions.db')" })
     const override = patch.find(entry => entry.id === 'storage-domain') as { config: { backend: string; routes: Record<string, string> } }
-    expect(override.config).toMatchObject({ backend: 'json', routes: { codeaudit: 'sqlite' } })
+    expect(override.config).toMatchObject({ backend: 'json', routes: { codeaudit: 'codeaudit-sqlite' } })
     const presetRoot = patch.find(entry => {
       const inserted = entry.insert as Array<{ id: string; name: string }> | undefined
       return inserted?.some(row => row.id === 'codeaudit-preset-root')
@@ -90,7 +90,7 @@ describe('dsh-codeaudit bundle', () => {
       peerDependencies?: Record<string, string>
       dsh?: { client?: { inject?: string[]; platform?: string }; bundle?: { patch?: string } }
     }
-    expect(manifest.dependencies?.['@deepseek-ai/dsh-storage-sqlite']).toBe('0.1.0-rc.6')
+    expect(manifest.dependencies?.['@deepseek-ai/dsh-storage-sqlite']).toBeUndefined()
     expect(manifest.dependencies?.['zod']).toBeDefined()
     expect(manifest.peerDependencies?.['@deepseek-ai/dsh-storage']).toBe('0.1.0-rc.6')
     expect(manifest.peerDependencies?.['@deepseek-ai/dsh-storage-domain']).toBe('0.1.0-rc.6')
