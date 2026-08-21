@@ -14,8 +14,20 @@
  * @module dsh-codeaudit/src/yakSkill
  */
 
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+
 /** Upstream body of the official yak skill. */
 export const YAK_SKILL_URL = 'https://raw.githubusercontent.com/yaklang/yak-skills/main/skills/yak/SKILL.md'
+
+/** Absolute path of this preset's skills directory (shipped with the package).
+ * Resolved against the built lib/ layout; the source-tree layout (unit tests
+ * running the TypeScript directly) falls back one level deeper. */
+export function presetSkillsDir(): string {
+  const fromLib = fileURLToPath(new URL('../preset/codeaudit/skills/', import.meta.url))
+  if (existsSync(fromLib)) return fromLib
+  return fileURLToPath(new URL('../../../preset/codeaudit/skills/', import.meta.url))
+}
 
 /** Refuse absurd bodies so a captive portal page cannot become a skill. */
 const MAX_SKILL_BYTES = 512 * 1024

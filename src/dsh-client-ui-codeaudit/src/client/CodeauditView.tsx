@@ -42,36 +42,39 @@ export type CodeauditViewProps = PropsRuntime<'conversation.view'> & PropsLocale
 /** yak-skill availability chip from the host skills-status route; hidden when
  * the route is absent (older host) or the skill is installed. */
 function YakSkillStatus({ t }: { readonly t: PropsLocale<'codeaudit'>['t'] }) {
-  const [state, setState] = useState<'unknown' | 'missing' | 'busy'>('unknown')
+  const [state, setState] = useState<{ kind: 'unknown' | 'missing' | 'busy'; error?: string }>({ kind: 'unknown' })
   useEffect(() => {
     let cancelled = false
     const query = typeof fetch === 'function'
-      ? fetch('/codeaudit/skills').then(response => (response.ok ? response.json() as Promise<{ yak?: boolean }> : undefined))
+      ? fetch('/codeaudit/skills').then(response => (response.ok ? response.json() as Promise<{ yak?: boolean; error?: string }> : undefined))
       : Promise.resolve(undefined)
     void query
-      .then(payload => { if (!cancelled) setState(payload?.yak === true ? 'unknown' : 'missing') })
+      .then(payload => { if (!cancelled && payload?.yak !== true) setState({ kind: 'missing', error: payload?.error }) })
       .catch(() => undefined)
     return () => { cancelled = true }
   }, [])
-  if (state === 'unknown') return null
+  if (state.kind === 'unknown') return null
   const fetchSkill = async () => {
-    setState('busy')
+    setState({ kind: 'busy' })
     try {
       const response = await fetch('/codeaudit/skills', { method: 'POST' })
-      const payload = await response.json() as { yak?: boolean }
-      setState(payload.yak === true ? 'unknown' : 'missing')
-    } catch {
-      setState('missing')
+      const payload = await response.json() as { yak?: boolean; error?: string }
+      setState(payload.yak === true ? { kind: 'unknown' } : { kind: 'missing', error: payload.error })
+    } catch (error) {
+      setState({ kind: 'missing', error: error instanceof Error ? error.message : String(error) })
     }
   }
   return (
     <p className={css.skillStatus} data-testid="codeaudit-yak-skill">
-      <span className={css.skillDot} data-state={state} aria-hidden="true" />
-      {state === 'busy' ? t('skills.yak.fetching') : t('skills.yak.missing')}
-      {state === 'missing' && (
+      <span className={css.skillDot} data-state={state.kind} aria-hidden="true" />
+      {state.kind === 'busy' ? t('skills.yak.fetching') : t('skills.yak.missing')}
+      {state.kind === 'missing' && (
         <button type="button" className={css.skillFetch} data-testid="codeaudit-yak-skill-fetch" onClick={() => { void fetchSkill() }}>
           {t('skills.yak.fetch')}
         </button>
+      )}
+      {state.kind === 'missing' && state.error !== undefined && (
+        <span className={css.skillError} title={state.error}>{state.error}</span>
       )}
     </p>
   )

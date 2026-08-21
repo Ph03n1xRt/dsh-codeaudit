@@ -95,6 +95,15 @@
   background: var(--dsh-color-bg-subtle, #f1f5f9);
 }
 
+.skillError {
+  font-size: 11px;
+  color: #dc2626;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+}
+
 .tabs {
   display: flex;
   gap: 4px;

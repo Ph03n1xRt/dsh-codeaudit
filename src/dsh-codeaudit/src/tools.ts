@@ -15,6 +15,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { ToolResult, ToolResultView } from '@deepseek-ai/dsh-tools'
 import { capPoc, capSnippet } from './spec.ts'
+import { ensureYakSkill, presetSkillsDir } from './yakSkill.ts'
 import type {
   AssetInput,
   CodeauditStateView,
@@ -605,6 +606,30 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
       // The graph is richer than the schema's permissive object item type; the
       // runtime value round-trips fine and the render stringifies it.
       return { graph: buildGraph(state) } as never
+    },
+  }))
+
+  ctx.tools.register(defineTool({
+    name: 'codeaudit_fetch_yak_skill',
+    description: "Install the official Yakit skill (yak) into this deployment NOW: it downloads the SKILL.md from yaklang/yak-skills into this preset's skills directory (a curl fallback honors HTTP(S)_PROXY environments), after which the skill appears in the catalog on the next refresh. Call ONLY with the user's explicit consent and ONLY when the yak skill is missing from the catalog.",
+    parameters: {},
+    output: {
+      schema: { type: 'object', additionalProperties: false, properties: {
+        installed: { type: 'boolean', required: true },
+        error: { type: 'string' },
+      } },
+      render: (_a, v) => [v.installed === true
+        ? { type: 'text', text: 'yak skill installed.' }
+        : { type: 'text', text: `yak skill install failed: ${v.error}` }],
+    },
+    execute: async (_args, exec) => {
+      sessionIdOf(exec)
+      try {
+        await ensureYakSkill(presetSkillsDir())
+        return { installed: true }
+      } catch (error) {
+        return { installed: false, error: error instanceof Error ? error.message : String(error) }
+      }
     },
   }))
 

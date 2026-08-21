@@ -26,14 +26,9 @@ import {
 } from './projection.ts'
 import { CodeauditStore } from './store.ts'
 import { registerCodeauditTools } from './tools.ts'
-import { ensureYakSkill } from './yakSkill.ts'
+import { ensureYakSkill, presetSkillsDir } from './yakSkill.ts'
 
-/** Absolute path of this preset's skills directory (shipped with the package). */
-export function presetSkillsDir(): string {
-  return fileURLToPath(new URL('../preset/codeaudit/skills/', import.meta.url))
-}
-
-export { ensureYakSkill, isYakSkillInstalled, yakSkillLastError, YAK_SKILL_URL } from './yakSkill.ts'
+export { ensureYakSkill, isYakSkillInstalled, presetSkillsDir, yakSkillLastError, YAK_SKILL_URL } from './yakSkill.ts'
 
 export type { CodeauditStateView } from './store.ts'
 export {

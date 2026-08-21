@@ -636,6 +636,30 @@ describe('codeaudit_graph and codeaudit_report', () => {
   })
 })
 
+describe('codeaudit_fetch_yak_skill', () => {
+  it('installs on consent and reports failures without throwing', async () => {
+    const { call } = await codeauditHarness()
+    const body = '---\nname: yak\ndescription: t\n---\nbody'
+    const fetchMock = vi.fn(async () => new Response(body, { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const ok = await call('codeaudit_fetch_yak_skill', {}, SESSION_ID) as Record<string, unknown>
+    expect(ok).toMatchObject({ installed: true })
+    vi.unstubAllGlobals()
+    const failing = vi.fn(async () => new Response('nope', { status: 502 }))
+    vi.stubGlobal('fetch', failing)
+    // yak.md already installed by the first call: the tool reports success
+    // without refetching.
+    const cached = await call('codeaudit_fetch_yak_skill', {}, SESSION_ID) as Record<string, unknown>
+    expect(cached).toMatchObject({ installed: true })
+    expect(failing).not.toHaveBeenCalled()
+    vi.unstubAllGlobals()
+    // Clean the file the tool wrote through presetSkillsDir's source-tree
+    // fallback so the working tree stays pristine.
+    const { rm } = await import('node:fs/promises')
+    await rm('preset/codeaudit/skills/yak.md', { force: true })
+  })
+})
+
 describe('caller authority', () => {
   it('rejects tool calls without an owning agent session', async () => {
     const { callWithoutAgent } = await codeauditHarness()

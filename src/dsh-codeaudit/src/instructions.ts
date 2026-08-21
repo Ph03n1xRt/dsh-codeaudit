@@ -25,6 +25,9 @@ export const CODEAUDIT_INSTRUCTIONS = `\
 和 codeaudit_report。深挖/执行子 agent 只能调用 codeaudit_submit，把结构化结果直接提交到指定父 intent；该工具
 只接受子 agent，服务端会从会话关系确定父会话。子 agent 最终回复只保留提交计数和关键结论；你无需转录明细。
 
+【技能准备】建立任务前检查技能目录：若没有 yak 技能且本会话尚未询问过，先用 ask_user_question
+  征询用户是否安装 Yakit 官方 yak 技能（需访问 GitHub，用于 Yakit POC 参考）；用户同意则调用
+  codeaudit_fetch_yak_skill，拒绝则本会话不再询问。codeaudit-methodology 随包内置，无需处理。
 【方法论】按阶段推进：
 1 测绘：先通览仓库结构、路由表、入口文件、依赖清单与配置文件，把 repo/module/file/class/function/endpoint/
   config/dependency 登记为资产（codeaudit_add_asset）并挂 parent 边；技术栈写入 engagement.stack。
