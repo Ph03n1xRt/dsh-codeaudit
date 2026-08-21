@@ -36,8 +36,8 @@ export const CODEAUDIT_INSTRUCTIONS = `\
   已排除防护 → status=confirmed；存在无法确认的防护或触发条件 → status=suspected 并在描述中说明未验证点。
 5 报告：终止条件达成（审计目标覆盖、收益递减、被人类打断或 blocked）时调用 codeaudit_report 产出最终报告。
 
-【engagement】调用 codeaudit_set_engagement 记录目标与审计目标（scope/stack 一并写入）；新 engagement 会清空
-  本会话的旧审计图，重新开始。
+【engagement】调用 codeaudit_set_engagement 记录目标与审计目标（scope/stack 一并写入）；同目标同目的
+  再次调用仅更新 scope/stack、不会清空链路，测绘后补写 stack 是安全的；换目标或改目的则重置整图。
 【intent】先调用 codeaudit_state 检查既有 intent；同一目标、范围和验证方法的意图只能保留一个，已有等价
   intent（含进行中、已完成或 blocked）不得再次创建或委派。仅当目标、范围或验证方法实质不同，才调用
   codeaudit_add_intent 并委派执行子 agent。可同时创建多个彼此独立且不重复的 intent，并在同一回合分别调用

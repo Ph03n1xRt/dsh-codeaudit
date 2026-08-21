@@ -278,11 +278,23 @@ export class CodeauditStore {
   }
 
   /**
-   * Create or reset the audit engagement. A new engagement clears the whole
-   * audit graph of the session and restarts fresh counters.
+   * Create, update, or reset the audit engagement. Re-declaring the SAME
+   * target and objective only updates scope/stack (late stack fills must not
+   * wipe the recorded chain); a genuinely different engagement clears the
+   * whole audit graph of the session and restarts fresh counters.
    */
   async initEngagement(sessionId: string, input: EngagementInput): Promise<CodeauditEngagement> {
     return this.enqueue(sessionId, async () => {
+      const existing = await this.getEngagement(sessionId)
+      if (existing !== undefined && existing.target === input.target && existing.objective === input.objective) {
+        const updated = snapshot<CodeauditEngagement>({
+          ...existing,
+          scope: input.scope === '' ? existing.scope : input.scope,
+          stack: input.stack === '' ? existing.stack : input.stack,
+        })
+        await (await this.domain()).table('engagements').put(sessionId, updated)
+        return updated
+      }
       const engagement = snapshot<CodeauditEngagement>({
         id: 'engagement-1',
         sessionId,
