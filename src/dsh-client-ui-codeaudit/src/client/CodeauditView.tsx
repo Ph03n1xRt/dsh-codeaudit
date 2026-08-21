@@ -11,7 +11,7 @@
  * or null (no `codeaudit_set_engagement` yet) renders the guiding empty note.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the `codeaudit` SessionProjectionMap key merge.
 import type {} from '../../../dsh-codeaudit/src/client.ts'
@@ -38,6 +38,44 @@ const TAB_LABELS = {
 
 /** Full props of the view entry: session standard kit + the locale seat. */
 export type CodeauditViewProps = PropsRuntime<'conversation.view'> & PropsLocale<'codeaudit'>
+
+/** yak-skill availability chip from the host skills-status route; hidden when
+ * the route is absent (older host) or the skill is installed. */
+function YakSkillStatus({ t }: { readonly t: PropsLocale<'codeaudit'>['t'] }) {
+  const [state, setState] = useState<'unknown' | 'missing' | 'busy'>('unknown')
+  useEffect(() => {
+    let cancelled = false
+    const query = typeof fetch === 'function'
+      ? fetch('/codeaudit/skills').then(response => (response.ok ? response.json() as Promise<{ yak?: boolean }> : undefined))
+      : Promise.resolve(undefined)
+    void query
+      .then(payload => { if (!cancelled) setState(payload?.yak === true ? 'unknown' : 'missing') })
+      .catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
+  if (state === 'unknown') return null
+  const fetchSkill = async () => {
+    setState('busy')
+    try {
+      const response = await fetch('/codeaudit/skills', { method: 'POST' })
+      const payload = await response.json() as { yak?: boolean }
+      setState(payload.yak === true ? 'unknown' : 'missing')
+    } catch {
+      setState('missing')
+    }
+  }
+  return (
+    <p className={css.skillStatus} data-testid="codeaudit-yak-skill">
+      <span className={css.skillDot} data-state={state} aria-hidden="true" />
+      {state === 'busy' ? t('skills.yak.fetching') : t('skills.yak.missing')}
+      {state === 'missing' && (
+        <button type="button" className={css.skillFetch} data-testid="codeaudit-yak-skill-fetch" onClick={() => { void fetchSkill() }}>
+          {t('skills.yak.fetch')}
+        </button>
+      )}
+    </p>
+  )
+}
 
 export function CodeauditView({ useProjection, t }: CodeauditViewProps) {
   const codeaudit = useProjection('codeaudit')
@@ -72,6 +110,7 @@ export function CodeauditView({ useProjection, t }: CodeauditViewProps) {
         {codeaudit.engagement !== null && codeaudit.engagement.stack !== '' && (
           <p className={css.metaLine}>技术栈：{codeaudit.engagement.stack}</p>
         )}
+        <YakSkillStatus t={t} />
       </header>
       <nav className={css.tabs} data-testid="codeaudit-tabs">
         {TABS.map(tabKey => (

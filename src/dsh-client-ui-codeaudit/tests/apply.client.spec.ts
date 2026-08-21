@@ -221,10 +221,14 @@ describe('codeaudit surface registration', () => {
 })
 
 describe('ui-codeaudit node half', () => {
-  it('the node apply is an inert loader seat', async () => {
-    expect(() => { nodeApply() }).not.toThrow()
-    const ctx = new Context()
-    await ctx.plugin({ name: 'ui-codeaudit-node', apply: nodeApply })
-    await ctx.fiber.dispose()
+  it('registers the skills-status route on the webServer', async () => {
+    const routes: Array<{ kind: string; path: string }> = []
+    const register = vi.fn((route: { kind: string; path: string }) => {
+      routes.push({ kind: route.kind, path: route.path })
+      return () => undefined
+    })
+    nodeApply({ webServer: { register } } as never)
+    expect(register).toHaveBeenCalledTimes(1)
+    expect(routes[0]).toEqual({ kind: 'exact', path: '/codeaudit/skills' })
   })
 })

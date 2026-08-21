@@ -1,7 +1,7 @@
 {
   "name": "dsh-codeaudit",
   "description": "DSH 代码审计模式：测绘代码资产、追踪数据流证据、记录漏洞链路与代码片段，并在 Web 中可视化展示。",
-  "version": "1.0.3-test.3",
+  "version": "1.0.3-test.4",
   "type": "module",
   "main": "./lib/index.js",
   "exports": {
@@ -60,6 +60,7 @@
     "@deepseek-ai/dsh-client-ui-primitives": "0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-slots": "0.1.0-rc.6",
     "@deepseek-ai/dsh-code-runtime": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-host-webserver": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-invariants": "0.1.0-rc.6",
     "@deepseek-ai/dsh-llm": "0.1.0-rc.6",
     "@deepseek-ai/dsh-scope": "^0.1.0-rc.6",

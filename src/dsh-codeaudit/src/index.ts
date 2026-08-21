@@ -28,6 +28,13 @@ import { CodeauditStore } from './store.ts'
 import { registerCodeauditTools } from './tools.ts'
 import { ensureYakSkill } from './yakSkill.ts'
 
+/** Absolute path of this preset's skills directory (shipped with the package). */
+export function presetSkillsDir(): string {
+  return fileURLToPath(new URL('../preset/codeaudit/skills/', import.meta.url))
+}
+
+export { ensureYakSkill, isYakSkillInstalled, yakSkillLastError, YAK_SKILL_URL } from './yakSkill.ts'
+
 export type { CodeauditStateView } from './store.ts'
 export {
   codeauditDomainSpec,
@@ -80,11 +87,13 @@ export function apply(ctx: Context): void {
   registerCodeauditTools(ctx, store)
   // Best-effort: fetch the official Yakit skill into this preset's skills
   // directory on first mount (the shipped file doubles as the installed
-  // flag). Offline or read-only installs simply skip; the audit does not
-  // depend on it. CODEAUDIT_SKIP_YAK_SKILL=1 opts out entirely.
+  // flag). Failures are logged and surfaced by the Web skills-status route;
+  // the audit does not depend on it. CODEAUDIT_SKIP_YAK_SKILL=1 opts out.
   if (process.env.CODEAUDIT_SKIP_YAK_SKILL !== '1') {
-    const skillsDir = fileURLToPath(new URL('../preset/codeaudit/skills/', import.meta.url))
-    void ensureYakSkill(skillsDir).catch(() => undefined)
+    void ensureYakSkill(presetSkillsDir()).catch(error => {
+      const message = error instanceof Error ? error.message : String(error)
+      ctx.logger?.warn?.(`[codeaudit] yak skill auto-fetch failed (retry next mount): ${message}`)
+    })
   }
   ctx.inject(['sessionProjections'], (projectionCtx) => {
     // The unit child activates only when a projection registry is composed
