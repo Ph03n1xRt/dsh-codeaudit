@@ -177,7 +177,9 @@ function Toggle({
 
 export function ExploreView({ codeaudit, t }: ExploreViewProps) {
   const [filter, setFilter] = useState<ChainFilter>('all')
-  const [layout, setLayout] = useState<LayoutMode>('horizontal')
+  // The tree grows top-down by default (lanes side by side); 'horizontal'
+  // turns it left-to-right.
+  const [layout, setLayout] = useState<LayoutMode>('vertical')
   const [selectedNode, setSelectedNode] = useState<ExploreGraphNode | null>(null)
   // null = adaptive: expand everything while the graph is small, collapse the
   // evidences into their intents once it grows past AUTO_EXPAND_MAX_NODES;

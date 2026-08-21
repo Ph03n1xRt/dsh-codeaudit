@@ -187,9 +187,6 @@ export function buildExploreModel(projection: CodeauditProjection, expanded: Rea
   return { engagement: projection.engagement, nodes, edges, intentStats }
 }
 
-/** Semantic reading order of the node kinds: 任务 → 意图 → 证据 → 漏洞. */
-const KIND_LEVEL: Record<ExploreNodeKind, number> = { engagement: 0, intent: 1, evidence: 2, finding: 3 }
-
 /** Assign every reachable id a BFS depth from the roots; others hang below. */
 function depthsOf(roots: readonly string[], edges: readonly CodeauditProjectionEdge[]): Map<string, number> {
   const depth = new Map<string, number>()
@@ -269,49 +266,64 @@ function snippetOf(node: CodeauditProjectionNode): string {
 }
 
 /**
- * Layered layout of the aggregated audit model with FIXED semantic levels:
- * 任务 (engagement) → 意图 (intent) → 证据 (evidence) → 漏洞 (finding). A
- * finding always sits one level deeper than the evidences and two deeper than
- * its proving intent, no matter how many derivation hops produced it. The
- * level axis compresses to the kinds actually visible, so a collapsed view
- * (evidences folded into their intents) leaves no empty evidence column.
- * Within a level, nodes of the same owning intent occupy adjacent rows
- * (intent order first, so each intent's cluster stays together). The orientation
- * picks the reading direction: horizontal places levels on the x axis (wide),
- * vertical on the y axis (tall — usually the better fit for a narrow side
- * panel carrying a long chain).
+ * Tree layout of the aggregated audit model: every intent owns one lane, and
+ * its whole subtree grows straight DOWN (or rightward) inside that lane —
+ * the intent card on top, its evidences below it, its findings at the bottom
+ * of the lane. The engagement sits above (or left of) all lanes, centered.
+ * There are NO global type columns: a finding reads as the bottom of its own
+ * intent's branch, never as a card in a shared findings stack.
+ *
+ * Derived intents take their own lanes after their source's lane (model order
+ * equals creation order, so a derived intent lands right beside the intent
+ * whose evidence produced it). Findings with an unknown intent fall into a
+ * trailing unnamed lane. The orientation picks the growing direction:
+ * 'vertical' grows top-down (lanes side by side), 'horizontal' grows
+ * left-to-right (lanes stacked as rows).
  * @param model - the aggregated exploration model.
- * @param options - layout options (orientation, default horizontal).
+ * @param options - layout options (orientation, default vertical).
  * @returns the placed nodes and their chain edges.
  */
 export function layoutExploration(model: ExploreModel, options: LayoutOptions = {}): {
   nodes: ExploreGraphNode[]
   edges: readonly CodeauditProjectionEdge[]
 } {
-  const vertical = options.orientation === 'vertical'
+  const topDown = options.orientation !== 'horizontal'
   const edges = model.edges
   const engagementId = model.engagement === null ? 'engagement-1' : model.engagement.id
 
-  // Compress the semantic levels to the kinds actually visible.
-  const present = [...new Set<number>([KIND_LEVEL.engagement, ...model.nodes.map(node => KIND_LEVEL[node.kind])])].sort((a, b) => a - b)
-  const levelOfKind = (kind: ExploreNodeKind): number => present.indexOf(KIND_LEVEL[kind])
-
-  // Lane keys: each intent's evidences/findings cluster under the intent.
-  const intentOrder = new Map<string, number>()
+  // Lane assignment: one lane per intent, in model (creation) order.
+  const laneOfIntent = new Map<string, number>()
   for (const node of model.nodes) {
-    if (node.kind === 'intent') intentOrder.set(node.id, intentOrder.size)
+    if (node.kind === 'intent') laneOfIntent.set(node.id, laneOfIntent.size)
   }
-  const UNLANED = model.nodes.length + intentOrder.size + 1
-  const laneOf = (node: CodeauditProjectionNode): Array<number> => {
-    switch (node.kind) {
-      case 'intent': return [intentOrder.get(node.id) ?? UNLANED, 0]
-      case 'evidence': return [intentOrder.get(node.intentId) ?? UNLANED, 0]
-      // Findings hang under their proving intent; unknown intents fall to the end.
-      case 'finding': return [intentOrder.get(node.intentId) ?? UNLANED + 1, 0]
-    }
+  const laneCount = laneOfIntent.size + (model.nodes.some(node => node.kind === 'finding' && !laneOfIntent.has(node.intentId)) ? 1 : 0)
+  const unlanedIndex = laneOfIntent.size
+
+  // Within a lane, the cards stack: intent, then evidences, then findings.
+  const laneCursor = new Map<number, number>()
+  const nextSlot = (lane: number): number => {
+    const slot = laneCursor.get(lane) ?? 0
+    laneCursor.set(lane, slot + 1)
+    return slot
+  }
+  const laneOfNode = (node: CodeauditProjectionNode): number => {
+    if (node.kind === 'intent') return laneOfIntent.get(node.id) ?? unlanedIndex
+    return laneOfIntent.get(node.intentId) ?? unlanedIndex
   }
 
-  const engagement: ExploreGraphNode = {
+  const decorate = (node: CodeauditProjectionNode): Omit<ExploreGraphNode, 'x' | 'y'> => ({
+    id: node.id,
+    kind: node.kind,
+    title: titleOf(node),
+    detail: detailOf(node),
+    severity: node.kind === 'finding' ? node.severity : undefined,
+    status: node.kind === 'finding' ? node.status : undefined,
+    location: locationOf(node),
+    snippet: snippetOf(node),
+    evidenceCount: node.kind === 'intent' ? model.intentStats.get(node.id)?.evidences ?? 0 : 0,
+    findingCount: node.kind === 'intent' ? model.intentStats.get(node.id)?.findings ?? 0 : 0,
+  })
+  const engagement: Omit<ExploreGraphNode, 'x' | 'y'> = {
     id: engagementId,
     kind: 'engagement',
     title: model.engagement === null ? '' : model.engagement.target,
@@ -322,54 +334,34 @@ export function layoutExploration(model: ExploreModel, options: LayoutOptions = 
     snippet: '',
     evidenceCount: 0,
     findingCount: 0,
-    x: 0,
-    y: 0,
   }
-  const decorated = [
-    { node: engagement, level: levelOfKind('engagement'), lane: [-1, 0] as Array<number>, seq: -1 },
-    ...model.nodes.map((node, seq) => ({
-      node: {
-        id: node.id,
-        kind: node.kind,
-        title: titleOf(node),
-        detail: detailOf(node),
-        severity: node.kind === 'finding' ? node.severity : undefined,
-        status: node.kind === 'finding' ? node.status : undefined,
-        location: locationOf(node),
-        snippet: snippetOf(node),
-        evidenceCount: node.kind === 'intent' ? model.intentStats.get(node.id)?.evidences ?? 0 : 0,
-        findingCount: node.kind === 'intent' ? model.intentStats.get(node.id)?.findings ?? 0 : 0,
-      } as Omit<ExploreGraphNode, 'x' | 'y'>,
-      level: levelOfKind(node.kind),
-      lane: laneOf(node),
-      seq,
+
+  // Slot every visible node inside its lane, in model order (evidences of one
+  // intent keep their submission order; findings land after the evidences).
+  const slotted: Array<{ node: Omit<ExploreGraphNode, 'x' | 'y'>; lane: number; slot: number }> = []
+  for (const node of model.nodes) {
+    slotted.push({ node: decorate(node), lane: laneOfNode(node), slot: nextSlot(laneOfNode(node)) })
+  }
+
+  const acrossCard = topDown ? EXPLORE_NODE_SIZE.width : EXPLORE_NODE_SIZE.height
+  const withinCard = topDown ? EXPLORE_NODE_SIZE.height : EXPLORE_NODE_SIZE.width
+  const laneGap = 72
+  const withinGap = 72
+  const laneStep = acrossCard + laneGap
+  const withinStep = withinCard + withinGap
+  const engagementAcross = Math.max(0, (Math.max(laneCount, 1) * laneStep - acrossCard) / 2)
+  // Lane content starts one step below (or right of) the engagement card.
+  const laneOrigin = withinStep
+  const place = (across: number, within: number): { x: number; y: number } =>
+    topDown ? { x: across, y: within } : { x: within, y: across }
+
+  const nodes: ExploreGraphNode[] = [
+    { ...engagement, ...place(engagementAcross, 0) },
+    ...slotted.map(({ node, lane, slot }) => ({
+      ...node,
+      ...place(lane * laneStep, laneOrigin + slot * withinStep),
     })),
   ]
-  // Group by level; within a level, order by lane (parent intent) then model
-  // order, so an intent's evidences/findings occupy adjacent rows.
-  const byLevel = new Map<number, typeof decorated>()
-  for (const item of decorated) {
-    const list = byLevel.get(item.level) ?? []
-    list.push(item)
-    byLevel.set(item.level, list)
-  }
-  const columnGap = 320
-  const rowGap = 152
-  const nodes: ExploreGraphNode[] = []
-  for (const [level, items] of [...byLevel.entries()].sort((a, b) => a[0] - b[0])) {
-    const ordered = [...items].sort((a, b) =>
-      a.lane[0] !== b.lane[0] ? a.lane[0] - b.lane[0]
-        : a.lane[1] !== b.lane[1] ? a.lane[1] - b.lane[1]
-          : a.seq - b.seq)
-    for (const [index, item] of ordered.entries()) {
-      nodes.push({
-        ...item.node,
-        ...(vertical
-          ? { x: index * rowGap, y: level * columnGap }
-          : { x: level * columnGap, y: index * rowGap }),
-      })
-    }
-  }
   return { nodes, edges }
 }
 
