@@ -113,9 +113,11 @@ function rawCssPlugin() {
       })
       builder.onLoad({ filter: /.*/, namespace: 'codeaudit-raw-css' }, async (args) => {
         const css = await readFile(args.path, 'utf8')
+        // A UNIQUE tag per stylesheet: a shared id made every global sheet
+        // after the first (xyflow) silently skip its own injection.
         return {
           loader: 'js',
-          contents: styleInjectionModule(css, `${CLIENT_PLUGIN_ID}/raw`),
+          contents: styleInjectionModule(css, `${CLIENT_PLUGIN_ID}/raw/${hashOf(args.path)}`),
           watchFiles: [args.path],
         }
       })
