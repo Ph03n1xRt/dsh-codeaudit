@@ -10,7 +10,7 @@ import { useMemo } from 'react'
 import hljs from 'highlight.js/lib/common'
 import http from 'highlight.js/lib/languages/http'
 // Global class names (.hljs-*): rides the raw-CSS inline channel.
-import 'highlight.js/styles/github.css'
+import 'highlight.js/styles/github-dark.css'
 import css from './CodeBlock.module.css'
 
 hljs.registerLanguage('http', http)

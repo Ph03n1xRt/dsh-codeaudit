@@ -4,14 +4,16 @@
   font-family: var(--dsh-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
   font-size: 11.5px;
   line-height: 1.6;
-  overflow: auto;
-  white-space: pre;
-  background: var(--dsh-color-bg-subtle, #f6f8fa);
-  border: 1px solid var(--dsh-color-border, #e2e8f0);
+  /* Wrap instead of a horizontal scrollbar: fixed to the container width,
+     height follows the content. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #0d1117;
+  border: 1px solid #263041;
   border-radius: 8px;
 }
 
-/* The github theme paints its own panel; blend into the card surface. */
+/* The github-dark theme paints its own panel; blend into the block. */
 .block :global(.hljs) {
   background: transparent;
   padding: 0;
