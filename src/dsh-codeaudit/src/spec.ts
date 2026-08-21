@@ -41,9 +41,17 @@ export const codeauditFindingStatusSchema = z.enum(['confirmed', 'suspected'])
 /** Longest code excerpt kept on a record (applied by the tools and mirrored by the projection). */
 export const SNIPPET_MAX_CHARS = 4000
 
+/** Longest POC (HTTP raw) kept on a finding — a full replayable request with body. */
+export const POC_MAX_CHARS = 16000
+
 /** Truncate one snippet to the durable cap. */
 export function capSnippet(value: string): string {
   return value.length > SNIPPET_MAX_CHARS ? value.slice(0, SNIPPET_MAX_CHARS) : value
+}
+
+/** Truncate one POC to the durable cap. */
+export function capPoc(value: string): string {
+  return value.length > POC_MAX_CHARS ? value.slice(0, POC_MAX_CHARS) : value
 }
 
 /** Non-empty id. */
@@ -104,6 +112,12 @@ export const codeauditFindingSchema = z.object({
   status: codeauditFindingStatusSchema,
   /** Frozen vulnerable-code excerpt (capped at SNIPPET_MAX_CHARS by the tools). */
   snippet: z.string().default(''),
+  /**
+   * Replayable verification POC: the complete HTTP raw (request line, headers,
+   * body) that reproduces the issue — pasteable straight into Yakit/Burp.
+   * Capped at POC_MAX_CHARS; empty when the audit was static-only.
+   */
+  poc: z.string().default(''),
   /** Fix suggestion. */
   fix: z.string().default(''),
   /** Optional asset the finding affects. */

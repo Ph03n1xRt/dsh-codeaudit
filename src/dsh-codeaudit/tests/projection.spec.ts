@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest'
 import { CallId } from '@deepseek-ai/dsh-llm'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
-import { SNIPPET_MAX_CHARS } from '../src/spec.ts'
+import { POC_MAX_CHARS, SNIPPET_MAX_CHARS } from '../src/spec.ts'
 import {
   applyCodeauditEvent,
   codeauditInitialState,
@@ -77,7 +77,7 @@ describe('applyCodeauditEvent', () => {
       { id: 'evidence-1', kind: 'evidence', evidenceKind: 'entry', intentId: 'intent-1', location: 'src/OrderController.java:42', detail: 'q reaches DAO', snippet: 'find(@RequestParam String q)', confidence: 0.9 },
       { id: 'intent-2', kind: 'intent', title: 'trace OrderDao sink', detail: '' },
       { id: 'evidence-2', kind: 'evidence', evidenceKind: 'sink', intentId: 'intent-2', location: 'src/OrderDao.java:87', detail: 'string concatenation', snippet: 'jdbc.query("..." + q)', confidence: 0.5 },
-      { id: 'finding-1', kind: 'finding', intentId: 'intent-2', title: 'sqli', severity: 'high', status: 'confirmed', cwe: 'CWE-89', description: 'injectable', location: 'src/OrderDao.java:87', snippet: '', fix: 'parameterize', evidenceIds: ['evidence-2'], affectedAssetId: undefined },
+      { id: 'finding-1', kind: 'finding', intentId: 'intent-2', title: 'sqli', severity: 'high', status: 'confirmed', cwe: 'CWE-89', description: 'injectable', location: 'src/OrderDao.java:87', snippet: '', poc: '', fix: 'parameterize', evidenceIds: ['evidence-2'], affectedAssetId: undefined },
     ])
     expect(state.edges).toEqual([
       { id: 'edge-1', kind: 'spawns', sourceId: 'engagement-1', targetId: 'intent-1' },
@@ -174,6 +174,17 @@ describe('applyCodeauditEvent', () => {
     expect(unknownEvidence).toBe(state)
     const badAsset = applyCodeauditEvent(state, toolCall('codeaudit_add_finding', '{"intentId":"intent-1","title":"n","location":"a:1","evidenceIds":["evidence-1"],"affectedAssetId":"asset-9"}', 4, 'n1'))
     expect(badAsset).toBe(state)
+  })
+
+  it('folds the finding poc with the durable cap, mirroring the tools', () => {
+    const state = fold(
+      toolCall('codeaudit_set_engagement', '{"target":"t","objective":"o"}', 1, 'e1'),
+      toolCall('codeaudit_add_intent', '{"engagementId":"engagement-1","title":"a"}', 2, 'i1'),
+      toolCall('codeaudit_add_evidence', '{"intentId":"intent-1","detail":"sink"}', 3, 'v1'),
+    )
+    const poc = 'z'.repeat(POC_MAX_CHARS + 30)
+    const folded = applyCodeauditEvent(state, toolCall('codeaudit_add_finding', JSON.stringify({ intentId: 'intent-1', title: 'n', severity: 'high', status: 'confirmed', location: 'a:1', evidenceIds: ['evidence-1'], poc }), 4, 'n1'))
+    expect(folded.nodes.at(-1)).toMatchObject({ kind: 'finding', poc: 'z'.repeat(POC_MAX_CHARS) })
   })
 
   it('add_asset records root and parented assets and skips invalid ones', () => {

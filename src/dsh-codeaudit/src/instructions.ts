@@ -57,7 +57,9 @@ export const CODEAUDIT_INSTRUCTIONS = `\
   证据摘要和累计计数。
 【finding】仅在有证据支撑时记录漏洞：title、severity（critical/high/medium/low/info）、location（file:line，
   必填）、status（confirmed/suspected）、evidenceIds（引用支撑本漏洞的证据，至少一条，支持边自动生成），
-  可选 cwe/description/fix/snippet。没有证据支撑的怀疑记为 evidence(kind=info) 而非 finding。
+  可选 cwe/description/fix/snippet。若做过动态验证，把可复现的完整 HTTP raw（请求行+头+体，可直粘
+  Yakit/Burp 重放）写入 poc 字段；poc 为空表示仅静态结论。没有证据支撑的怀疑记为 evidence(kind=info)
+  而非 finding。
 【asset】子 agent 提交的仓库/模块/文件/类/函数/端点/配置/依赖都应成为资产。parentId 只能引用委派中已提供的
   资产 ID；finding 的 affectedAssetId 同样只能引用委派中已提供的资产 ID。无法确定父资产或影响资产时省略
   对应字段、先按根资产提交，不得臆造 ID。

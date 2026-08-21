@@ -75,6 +75,8 @@ export type CodeauditProjectionNode =
     readonly description: string
     readonly location: string
     readonly snippet: string
+    /** Replayable verification POC (HTTP raw, capped); '' when static-only. */
+    readonly poc: string
     readonly fix: string
     /** The evidence chain backing this finding (supports edges), in submission order. */
     readonly evidenceIds: readonly string[]

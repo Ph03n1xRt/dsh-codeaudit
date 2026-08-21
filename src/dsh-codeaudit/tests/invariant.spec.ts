@@ -40,7 +40,7 @@ async function setup(open = true): Promise<{ ctx: Context }> {
     await domain.table('evidences').put('evidence-1', { id: 'evidence-1', sessionId: 's1', intentId: 'intent-1', kind: 'sink', location: 'a.java:1', detail: 'd', snippet: '', confidence: 1 })
     await domain.table('findings').put('finding-1', {
       id: 'finding-1', sessionId: 's1', intentId: 'intent-2', title: 'n', severity: 'high', status: 'confirmed',
-      cwe: '', description: '', location: 'a.java:2', snippet: '', fix: '', affectedAssetId: 'asset-1',
+      cwe: '', description: '', location: 'a.java:2', snippet: '', poc: '', fix: '', affectedAssetId: 'asset-1',
     })
     await domain.table('assets').put('asset-1', { id: 'asset-1', sessionId: 's1', type: 'repo', value: 'shop-backend', meta: '' })
     await domain.table('assets').put('asset-2', { id: 'asset-2', sessionId: 's1', type: 'module', value: 'order-service', meta: '' })
@@ -168,7 +168,7 @@ describe('codeaudit invariant companion', () => {
     const { ctx } = await setup()
     const finding = (affectedAssetId?: string) => ({
       id: 'finding-2', sessionId: 's1', intentId: 'intent-2', title: 'n', severity: 'low', status: 'suspected',
-      cwe: '', description: '', location: 'a.java:3', snippet: '', fix: '',
+      cwe: '', description: '', location: 'a.java:3', snippet: '', poc: '', fix: '',
       ...(affectedAssetId === undefined ? {} : { affectedAssetId }),
     })
     expect(() => {

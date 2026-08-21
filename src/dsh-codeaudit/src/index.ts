@@ -41,7 +41,9 @@ export {
   codeauditIntentSchema,
   codeauditSeveritySchema,
   SNIPPET_MAX_CHARS,
+  POC_MAX_CHARS,
   capSnippet,
+  capPoc,
 } from './spec.ts'
 export type {
   CodeauditAsset,

@@ -8,12 +8,84 @@
  * frozen code snippets) down to the finding.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { CodeauditProjection, CodeauditProjectionNode, CodeauditSeverity } from '../../../dsh-codeaudit/src/client.ts'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import { FindingChainDrawer } from './FindingChainDrawer.tsx'
 import type { CodeauditKey } from './locales.ts'
 import css from './FindingsView.module.css'
+
+/** The finding-shaped member of the node union. */
+type FindingNode = Extract<CodeauditProjectionNode, { kind: 'finding' }>
+
+/** A right drawer over one finding's replayable HTTP-raw POC. */
+function PocDrawer({
+  finding,
+  t,
+  onClose,
+}: {
+  readonly finding: FindingNode
+  readonly t: PropsLocale<'codeaudit'>['t']
+  readonly onClose: () => void
+}) {
+  const [copyState, setCopyState] = useState<'idle' | 'done' | 'failed'>('idle')
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => { window.removeEventListener('keydown', closeOnEscape) }
+  }, [onClose])
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(finding.poc)
+      setCopyState('done')
+    } catch {
+      setCopyState('failed')
+    }
+  }
+  const download = () => {
+    const blob = new Blob([finding.poc], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `poc-${finding.id}.txt`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className={css.pocLayer} data-testid="finding-poc-drawer">
+      <button type="button" className={css.backdrop} aria-hidden="true" tabIndex={-1} onClick={onClose} />
+      <aside className={css.pocDrawer} aria-label={t('finding.pocTitle')}>
+        <header className={css.pocHeader}>
+          <div className={css.pocHeaderText}>
+            <p className={css.pocHintLine}>{t('finding.pocHint')}</p>
+            <h3 className={css.pocTitle}>{finding.title}<span className={css.pocId}>{finding.id}</span></h3>
+          </div>
+          <button type="button" className={css.close} aria-label="关闭" onClick={onClose}>×</button>
+        </header>
+        {finding.poc === '' ? (
+          <p className={css.pocEmpty} data-testid="finding-poc-empty">{t('finding.pocEmpty')}</p>
+        ) : (
+          <>
+            <div className={css.pocActions}>
+              <button type="button" className={css.pocAction} data-testid="finding-poc-copy" onClick={() => { void copy() }}>
+                {t(copyState === 'done' ? 'finding.pocCopied' : 'finding.pocCopy')}
+              </button>
+              <button type="button" className={css.pocAction} data-testid="finding-poc-download" onClick={download}>
+                {t('finding.pocDownload')}
+              </button>
+            </div>
+            {copyState === 'failed' && <p className={css.pocError} role="status">{t('finding.pocCopyFailed')}</p>}
+            <pre className={css.pocRaw} data-testid="finding-poc-raw">{finding.poc}</pre>
+          </>
+        )}
+      </aside>
+    </div>
+  )
+}
 
 /** Severity badge label keys. */
 const SEVERITY_LABELS: Record<CodeauditSeverity, CodeauditKey> = {
@@ -41,7 +113,8 @@ export interface FindingsViewProps {
 }
 
 export function FindingsView({ codeaudit, t }: FindingsViewProps) {
-  const [chainFinding, setChainFinding] = useState<(CodeauditProjectionNode & { kind: 'finding' }) | null>(null)
+  const [chainFinding, setChainFinding] = useState<FindingNode | null>(null)
+  const [pocFinding, setPocFinding] = useState<FindingNode | null>(null)
   const findings = findingsOf(codeaudit)
   if (findings.length === 0) {
     return <p className={css.empty} data-testid="codeaudit-findings-empty">{t('findings.empty')}</p>
@@ -70,14 +143,24 @@ export function FindingsView({ codeaudit, t }: FindingsViewProps) {
               </div>
               {finding.fix !== '' && <p className={css.fix}>{t('report.fix')}: {finding.fix}</p>}
               {finding.snippet !== '' && <pre className={css.snippet} data-testid="codeaudit-finding-snippet">{finding.snippet}</pre>}
-              <button
-                type="button"
-                className={css.chainButton}
-                data-testid="codeaudit-finding-chain"
-                onClick={() => { setChainFinding(finding) }}
-              >
-                {t('finding.viewChain')}
-              </button>
+              <div className={css.actions}>
+                <button
+                  type="button"
+                  className={css.chainButton}
+                  data-testid="codeaudit-finding-chain"
+                  onClick={() => { setChainFinding(finding) }}
+                >
+                  {t('finding.viewChain')}
+                </button>
+                <button
+                  type="button"
+                  className={css.chainButton}
+                  data-testid="codeaudit-finding-poc"
+                  onClick={() => { setPocFinding(finding) }}
+                >
+                  {t('finding.poc')}{finding.poc === '' ? '' : ' ●'}
+                </button>
+              </div>
             </li>
           )
         })}
@@ -88,6 +171,13 @@ export function FindingsView({ codeaudit, t }: FindingsViewProps) {
           codeaudit={codeaudit}
           t={t}
           onClose={() => { setChainFinding(null) }}
+        />
+      )}
+      {pocFinding !== null && (
+        <PocDrawer
+          finding={pocFinding}
+          t={t}
+          onClose={() => { setPocFinding(null) }}
         />
       )}
     </div>

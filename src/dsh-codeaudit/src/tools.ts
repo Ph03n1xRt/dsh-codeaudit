@@ -14,7 +14,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { ToolResult, ToolResultView } from '@deepseek-ai/dsh-tools'
-import { capSnippet } from './spec.ts'
+import { capPoc, capSnippet } from './spec.ts'
 import type {
   AssetInput,
   CodeauditStateView,
@@ -61,6 +61,11 @@ function optionalString(value: unknown): string {
 /** Normalize one snippet: optional string, capped to the durable limit. */
 function snippetValue(value: unknown): string {
   return capSnippet(optionalString(value))
+}
+
+/** Normalize one POC (HTTP raw): optional string, capped to the durable limit. */
+function pocValue(value: unknown): string {
+  return capPoc(optionalString(value))
 }
 
 function submissionList(value: unknown, name: string): Record<string, unknown>[] {
@@ -213,6 +218,7 @@ function buildReport(state: CodeauditStateView): string {
       `- 位置: ${finding.location}`,
       `- 影响资产: ${asset === undefined ? '（未关联）' : `[${asset.type}] ${asset.value}`}`,
       `- 修复建议: ${finding.fix === '' ? '（无）' : finding.fix}`,
+      ...(finding.poc === '' ? [] : ['- POC (HTTP raw，可直接粘贴 Yakit/Burp 重放):', ...finding.poc.split('\n').map(line => `  ${line}`)]),
       '- 证据链:',
       ...evidenceChainOf(finding.id).map((evidenceId, index) => `  ${index + 1}. ${evidenceOf(evidenceId)}`),
     ].join('\n')
@@ -280,6 +286,7 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
         description: { type: 'string', description: 'Impact or root-cause description; for suspected findings, state what remains unverified.' },
         fix: { type: 'string', description: 'Fix suggestion.' },
         snippet: { type: 'string', description: 'The vulnerable code excerpt (capped).' },
+        poc: { type: 'string', description: 'Replayable verification POC: the COMPLETE HTTP raw (request line, headers, body) that reproduces the issue — pasteable straight into Yakit/Burp. Omit for static-only findings.' },
         evidenceIds: { type: 'array', required: true, description: 'The evidence chain backing this finding (min one; ids from this batch or earlier submissions).', items: { type: 'string' } },
         affectedAssetId: { type: 'string', description: 'Existing affected parent-session asset id, when known.' },
       } } },
@@ -331,6 +338,7 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
           description: optionalString(finding.description),
           location: requiredString(finding.location, 'finding.location'),
           snippet: snippetValue(finding.snippet),
+          poc: pocValue(finding.poc),
           fix: optionalString(finding.fix),
           evidenceIds: stringList(finding.evidenceIds, 'finding.evidenceIds'),
           ...(typeof finding.affectedAssetId === 'string' ? { affectedAssetId: finding.affectedAssetId } : {}),
@@ -461,6 +469,7 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
       description: { type: 'string', description: 'Impact / root-cause description; for suspected findings, state what remains unverified.' },
       fix: { type: 'string', description: 'Optional fix suggestion.' },
       snippet: { type: 'string', description: 'Optional vulnerable code excerpt (capped).' },
+      poc: { type: 'string', description: 'Optional replayable verification POC: the COMPLETE HTTP raw (request line, headers, body) that reproduces the issue — pasteable straight into Yakit/Burp. Record it when dynamic verification was performed.' },
       affectedAssetId: { type: 'string', description: 'Optional asset id this finding affects.' },
     },
     output: {
@@ -483,6 +492,7 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
         description: args.description ?? '',
         location: args.location,
         snippet: snippetValue(args.snippet),
+        poc: pocValue(args.poc),
         fix: args.fix ?? '',
         evidenceIds: args.evidenceIds,
         ...(args.affectedAssetId !== undefined ? { affectedAssetId: args.affectedAssetId } : {}),

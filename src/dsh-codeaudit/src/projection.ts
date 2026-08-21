@@ -12,7 +12,7 @@
 
 import { z } from 'zod'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
-import { capSnippet } from './spec.ts'
+import { capPoc, capSnippet } from './spec.ts'
 import type {
   CodeauditAssetType,
   CodeauditEdgeKind,
@@ -66,6 +66,7 @@ export const codeauditProjectionSchema: z.ZodType<CodeauditProjection | null> = 
         description: z.string(),
         location: z.string(),
         snippet: z.string(),
+        poc: z.string(),
         fix: z.string(),
         evidenceIds: z.array(z.string()),
         affectedAssetId: z.union([z.string(), z.undefined()]),
@@ -339,6 +340,7 @@ export function applyCodeauditEvent(state: CodeauditFoldState, event: SessionEve
         description: str(args.description),
         location,
         snippet: capSnippet(str(args.snippet)),
+        poc: capPoc(str(args.poc)),
         fix: str(args.fix),
         evidenceIds,
         affectedAssetId: affectedAssetId === '' ? undefined : affectedAssetId,
