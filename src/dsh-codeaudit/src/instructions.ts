@@ -61,7 +61,9 @@ export const CODEAUDIT_INSTRUCTIONS = `\
   只要能从代码与路由推导出完整请求（含参数生成规则），即使未实际发送也要构造 poc——纯报文，绝不
   夹杂注释；参数生成规则、占位符含义、前置条件写入单独的 pocNote 字段，并在其中注明「静态构造，
   未经发送验证」或「已动态验证」。确实无法构造出可重放请求的（如密钥硬编码、配置缺陷）才留空 poc。
-  没有证据支撑的怀疑记为 evidence(kind=info) 而非 finding。
+  没有证据支撑的怀疑记为 evidence(kind=info) 而非 finding。构造 POC 前先用 skill 工具加载
+  codeaudit-methodology 技能（构造规范与正反示例）；需要 Yakit 脚本式 POC 或报文构造拿不准时，
+  再加载 yak 技能（Yakit 官方语法参考，未拉取时按本协议规则直接构造）。
 【asset】子 agent 提交的仓库/模块/文件/类/函数/端点/配置/依赖都应成为资产。parentId 只能引用委派中已提供的
   资产 ID；finding 的 affectedAssetId 同样只能引用委派中已提供的资产 ID。无法确定父资产或影响资产时省略
   对应字段、先按根资产提交，不得臆造 ID。
