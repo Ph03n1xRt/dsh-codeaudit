@@ -25,9 +25,10 @@ export const CODEAUDIT_INSTRUCTIONS = `\
 和 codeaudit_report。深挖/执行子 agent 只能调用 codeaudit_submit，把结构化结果直接提交到指定父 intent；该工具
 只接受子 agent，服务端会从会话关系确定父会话。子 agent 最终回复只保留提交计数和关键结论；你无需转录明细。
 
-【技能准备】建立任务前检查技能目录：若没有 yak 技能且本会话尚未询问过，先用 ask_user_question
-  征询用户是否安装 Yakit 官方 yak 技能（需访问 GitHub，用于 Yakit POC 参考）；用户同意则调用
-  codeaudit_fetch_yak_skill，拒绝则本会话不再询问。codeaudit-methodology 随包内置，无需处理。
+【技能准备】随包内置三个参考技能，按需用 skill 工具加载：codeaudit-methodology（审计方法论与
+  POC 构造规范）、webfuzzer-hotpatch（HTTP POC 语法/fuzztag/热加载钩子）、yaklang-syntax（yak 语法
+  与加解密函数写法）。若目录中缺失后两者且本会话尚未询问过，先征询用户是否在线补装（需访问
+  GitHub），同意则调用 codeaudit_fetch_yak_skill，拒绝则不再询问。
 【方法论】按阶段推进：
 1 测绘：先通览仓库结构、路由表、入口文件、依赖清单与配置文件，把 repo/module/file/class/function/endpoint/
   config/dependency 登记为资产（codeaudit_add_asset）并挂 parent 边；技术栈写入 engagement.stack。
@@ -66,7 +67,8 @@ export const CODEAUDIT_INSTRUCTIONS = `\
   未经发送验证」或「已动态验证」。确实无法构造出可重放请求的（如密钥硬编码、配置缺陷）才留空 poc。
   没有证据支撑的怀疑记为 evidence(kind=info) 而非 finding。构造 POC 前先用 skill 工具加载
   codeaudit-methodology 技能（构造规范与正反示例）；需要 Yakit 脚本式 POC 或报文构造拿不准时，
-  再加载 yak 技能（Yakit 官方语法参考，未拉取时按本协议规则直接构造）。
+  再加载 webfuzzer-hotpatch 技能（HTTP POC 语法与热加载）、需要加解密函数写法时加载 yaklang-syntax
+  技能（缺失时按本协议规则直接构造）。
 【asset】子 agent 提交的仓库/模块/文件/类/函数/端点/配置/依赖都应成为资产。parentId 只能引用委派中已提供的
   资产 ID；finding 的 affectedAssetId 同样只能引用委派中已提供的资产 ID。无法确定父资产或影响资产时省略
   对应字段、先按根资产提交，不得臆造 ID。

@@ -27,7 +27,7 @@ import {
 import { CodeauditStore } from './store.ts'
 import { registerCodeauditTools } from './tools.ts'
 
-export { ensureYakSkill, isYakSkillInstalled, presetSkillsDir, yakSkillLastError, YAK_SKILL_URL } from './yakSkill.ts'
+export { ensureYakSkill, isYakSkillInstalled, presetSkillsDir, yakSkillLastError } from './yakSkill.ts'
 
 export type { CodeauditStateView } from './store.ts'
 export {

@@ -611,7 +611,7 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
 
   ctx.tools.register(defineTool({
     name: 'codeaudit_fetch_yak_skill',
-    description: "Install the official Yakit skill (yak) into this deployment NOW: it downloads the SKILL.md from yaklang/yak-skills into this preset's skills directory (a curl fallback honors HTTP(S)_PROXY environments), after which the skill appears in the catalog on the next refresh. Call ONLY with the user's explicit consent and ONLY when the yak skill is missing from the catalog.",
+    description: "Restore the bundled Yakit reference skills (webfuzzer-hotpatch, yaklang-syntax) into this deployment NOW: it downloads the missing SKILL.md files from yaklang/yak-skills into this preset's skills directory (CDN mirrors, plus a curl fallback honoring HTTP(S)_PROXY). Call ONLY with the user's explicit consent and ONLY when those skills are missing from the catalog.",
     parameters: {},
     output: {
       schema: { type: 'object', additionalProperties: false, properties: {

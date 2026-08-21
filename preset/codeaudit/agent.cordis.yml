@@ -218,8 +218,9 @@
           能从代码与路由推导出完整请求的漏洞（即使未实际发送）都要构造 poc：完整 HTTP raw 纯报文写入 poc
           字段，绝不夹注释；参数生成规则、占位符含义写入单独的 pocNote 字段并注明「静态构造，未经发送
           验证」或「已动态验证」。确实无法构造可重放请求的才留空 poc。构造 POC 前先用 skill 工具
-          加载 codeaudit-methodology 技能（构造规范），需要 Yakit 脚本式 POC 或拿不准报文写法时
-          再加载 yak 技能（官方语法参考）；技能不存在时按上述规则直接构造。status=confirmed 需已排查 sanitizer/框架防护，否则用 suspected。asset 的 parentId、finding 的
+          加载 codeaudit-methodology 技能（构造规范），需要 HTTP POC 语法/fuzztag/热加载写法时加载
+          webfuzzer-hotpatch 技能，需要 yak 语法或加解密函数写法时加载 yaklang-syntax 技能；
+          技能不存在时按上述规则直接构造。status=confirmed 需已排查 sanitizer/框架防护，否则用 suspected。asset 的 parentId、finding 的
           affectedAssetId 只能引用委派中提供的或既往提交返回的既有资产。没有对应结果时传空数组，绝不重复
           提交同一条数据。
 
@@ -262,8 +263,9 @@
           能从代码与路由推导出完整请求的漏洞（即使未实际发送）都要构造 poc：完整 HTTP raw 纯报文写入 poc
           字段，绝不夹注释；参数生成规则、占位符含义写入单独的 pocNote 字段并注明「静态构造，未经发送
           验证」或「已动态验证」。确实无法构造可重放请求的才留空 poc。构造 POC 前先用 skill 工具
-          加载 codeaudit-methodology 技能（构造规范），需要 Yakit 脚本式 POC 或拿不准报文写法时
-          再加载 yak 技能（官方语法参考）；技能不存在时按上述规则直接构造。status=confirmed 需已排查 sanitizer/框架防护，否则用 suspected。asset 的 parentId、finding 的
+          加载 codeaudit-methodology 技能（构造规范），需要 HTTP POC 语法/fuzztag/热加载写法时加载
+          webfuzzer-hotpatch 技能，需要 yak 语法或加解密函数写法时加载 yaklang-syntax 技能；
+          技能不存在时按上述规则直接构造。status=confirmed 需已排查 sanitizer/框架防护，否则用 suspected。asset 的 parentId、finding 的
           affectedAssetId 只能引用委派中提供的或既往提交返回的既有资产。没有对应结果时传空数组，绝不重复
           提交同一条数据。
 
