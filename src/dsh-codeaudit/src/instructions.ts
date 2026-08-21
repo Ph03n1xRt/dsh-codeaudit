@@ -57,10 +57,11 @@ export const CODEAUDIT_INSTRUCTIONS = `\
   证据摘要和累计计数。
 【finding】仅在有证据支撑时记录漏洞：title、severity（critical/high/medium/low/info）、location（file:line，
   必填）、status（confirmed/suspected）、evidenceIds（引用支撑本漏洞的证据，至少一条，支持边自动生成），
-  可选 cwe/description/fix/snippet。若做过动态验证，把可复现的完整 HTTP raw（请求行+头+体）写入 poc
-  字段——poc 必须是可直粘 Yakit/Burp 重放的纯报文，绝不夹杂任何注释或说明（如参数生成规则、占位符
-  含义、前置条件），这类内容一律写入单独的 pocNote 字段；poc 为空表示仅静态结论。没有证据支撑的
-  怀疑记为 evidence(kind=info) 而非 finding。
+  可选 cwe/description/fix/snippet。poc 为可直粘 Yakit/Burp 重放的完整 HTTP raw（请求行+头+体）：
+  只要能从代码与路由推导出完整请求（含参数生成规则），即使未实际发送也要构造 poc——纯报文，绝不
+  夹杂注释；参数生成规则、占位符含义、前置条件写入单独的 pocNote 字段，并在其中注明「静态构造，
+  未经发送验证」或「已动态验证」。确实无法构造出可重放请求的（如密钥硬编码、配置缺陷）才留空 poc。
+  没有证据支撑的怀疑记为 evidence(kind=info) 而非 finding。
 【asset】子 agent 提交的仓库/模块/文件/类/函数/端点/配置/依赖都应成为资产。parentId 只能引用委派中已提供的
   资产 ID；finding 的 affectedAssetId 同样只能引用委派中已提供的资产 ID。无法确定父资产或影响资产时省略
   对应字段、先按根资产提交，不得臆造 ID。
