@@ -24,43 +24,29 @@
   padding: 0;
 }
 
-/* Actions live INSIDE the panel as quiet ghost chips, tucked into the
- * top-right corner: no border, near-invisible until hover, so the code
- * surface stays one visual object instead of code + bolted-on buttons. */
+/* Quiet action links in the panel's top-right corner: plain low-contrast
+ * text, always visible, no borders, no boxes, no reveals. */
 .actions {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 5px;
+  right: 8px;
   z-index: 1;
   display: flex;
-  gap: 2px;
-  padding: 4px 6px;
-  border-radius: 0 8px 0 8px;
-  background: linear-gradient(215deg, rgba(13, 17, 23, 0.92) 0%, rgba(13, 17, 23, 0.55) 70%, transparent 100%);
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.wrap:hover .actions,
-.actions:focus-within {
-  opacity: 1;
+  gap: 8px;
 }
 
 .action {
   border: none;
   background: transparent;
-  color: #7d8590;
-  border-radius: 5px;
-  padding: 2px 7px;
+  color: rgba(230, 237, 243, 0.45);
+  padding: 0;
   font-size: 10.5px;
   line-height: 1.4;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
 }
 
 .action:hover {
-  color: #e6edf3;
-  background: rgba(110, 118, 129, 0.25);
+  color: rgba(230, 237, 243, 0.9);
 }
 
 .action[data-state='done'] {
