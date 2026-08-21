@@ -97,21 +97,31 @@ describe('buildExploreModel', () => {
 })
 
 describe('layoutExploration', () => {
-  it('lays a pure chain one column per hop with supports edges drawn inline', () => {
+  it('assigns fixed semantic levels: engagement → intent → evidence → finding, clustered by lane', () => {
     const { nodes, edges } = layoutExploration(buildExploreModel(chainProjection(), allExpanded(chainProjection())))
     expect(edges.map(edge => edge.kind)).toEqual(['spawns', 'yields', 'derived_from', 'yields', 'proves', 'supports'])
     const byId = new Map(nodes.map(node => [node.id, node]))
     expect(byId.get('engagement-1')).toMatchObject({ kind: 'engagement', title: 'shop-backend', x: 0, y: 0 })
+    // Every intent sits at level 1 — including the DERIVED intent-2.
     expect(byId.get('intent-1')).toMatchObject({ kind: 'intent', title: 'trace order', detail: 'source → sink', x: 320, y: 0, evidenceCount: 1 })
+    expect(byId.get('intent-2')).toMatchObject({ kind: 'intent', x: 320, y: 152, evidenceCount: 1, findingCount: 1 })
+    // Evidences at level 2, clustered under their owning intent's row.
     expect(byId.get('evidence-1')).toMatchObject({ kind: 'evidence', title: 'q reaches DAO', detail: 'src/OrderController.java:42 [entry] · 0.9', location: 'src/OrderController.java:42', snippet: 'find(@RequestParam String q)', x: 640, y: 0 })
-    expect(byId.get('intent-2')).toMatchObject({ kind: 'intent', x: 960, y: 0, evidenceCount: 1, findingCount: 1 })
-    // The supports edge pulls the finding into the sink evidence's column:
-    // entry(2) → derived intent(3) → sink evidence(4) ≈ finding(4), stacked.
-    expect(byId.get('evidence-2')).toMatchObject({ kind: 'evidence', x: 1280, y: 0 })
-    expect(byId.get('finding-1')).toMatchObject({ kind: 'finding', severity: 'high', status: 'confirmed', title: 'sqli', location: 'src/OrderDao.java:87', x: 1280, y: 152 })
+    expect(byId.get('evidence-2')).toMatchObject({ kind: 'evidence', x: 640, y: 152 })
+    // The finding sits at level 3 — one level below the evidences, two below
+    // its proving intent; same-owner nodes stay adjacent within a level.
+    expect(byId.get('finding-1')).toMatchObject({ kind: 'finding', severity: 'high', status: 'confirmed', title: 'sqli', location: 'src/OrderDao.java:87', x: 960, y: 0 })
   })
 
-  it('stacks sibling nodes of one layer vertically and excludes parent edges', () => {
+  it('compresses the level axis when evidences are folded (no empty evidence column)', () => {
+    const { nodes } = layoutExploration(buildExploreModel(chainProjection(), new Set()))
+    const byId = new Map(nodes.map(node => [node.id, node]))
+    expect(byId.get('intent-1')).toMatchObject({ x: 320 })
+    expect(byId.get('intent-2')).toMatchObject({ x: 320 })
+    expect(byId.get('finding-1')).toMatchObject({ x: 640, y: 0 })
+  })
+
+  it('orders each level by owning intent lane and excludes parent edges', () => {
     const projection: CodeauditProjection = {
       ...chainProjection(),
       nodes: [
@@ -127,15 +137,16 @@ describe('layoutExploration', () => {
     }
     const { nodes, edges } = layoutExploration(buildExploreModel(projection, allExpanded(projection)))
     expect(edges.some(edge => edge.kind === 'parent')).toBe(false)
-    const layerOne = nodes.filter(node => node.x === 320).sort((a, b) => a.y - b.y)
-    expect(layerOne.map(node => node.id)).toEqual(['intent-1', 'intent-3'])
-    expect(layerOne[0]!.y).toBe(0)
-    expect(layerOne[1]!.y).toBe(152)
+    const atLevel = (x: number) => nodes.filter(node => node.x === x).sort((a, b) => a.y - b.y).map(node => node.id)
+    expect(atLevel(320)).toEqual(['intent-1', 'intent-2', 'intent-3'])
+    // Evidences of intent-1 (evidence-1, evidence-3) stay adjacent, before
+    // intent-2's evidence.
+    expect(atLevel(640)).toEqual(['evidence-1', 'evidence-3', 'evidence-2'])
     // A location-less evidence renders its detail without the location prefix.
     expect(nodes.find(node => node.id === 'evidence-3')).toMatchObject({ detail: '[sanitizer] · 0.5' })
   })
 
-  it('hangs nodes unreachable from the engagement in the last column and tolerates a missing engagement', () => {
+  it('places an orphan finding (unknown intent) at the finding level, below the lanes, and tolerates a missing engagement', () => {
     const projection: CodeauditProjection = {
       ...chainProjection(),
       nodes: [
@@ -145,22 +156,23 @@ describe('layoutExploration', () => {
     }
     const { nodes } = layoutExploration(buildExploreModel(projection, allExpanded(projection)))
     const orphan = nodes.find(node => node.id === 'finding-9')!
-    expect(orphan.x).toBeGreaterThan(1280) // one column past the deepest chain column
+    expect(orphan.x).toBe(960) // the finding level
+    const findings = nodes.filter(node => node.kind === 'finding').sort((a, b) => a.y - b.y)
+    expect(findings.map(node => node.id)).toEqual(['finding-1', 'finding-9'])
     // A null engagement still yields an engagement start node with empty text.
     const engagementless = layoutExploration(buildExploreModel({ ...projection, engagement: null }, allExpanded(projection)))
     expect(engagementless.nodes[0]).toMatchObject({ id: 'engagement-1', kind: 'engagement', title: '', x: 0, y: 0 })
   })
 
-  it('places depth on the y axis in vertical mode, siblings side by side', () => {
+  it('places the semantic levels on the y axis in vertical mode, lanes side by side', () => {
     const { nodes } = layoutExploration(buildExploreModel(chainProjection(), allExpanded(chainProjection())), { orientation: 'vertical' })
     const byId = new Map(nodes.map(node => [node.id, node]))
     expect(byId.get('engagement-1')).toMatchObject({ x: 0, y: 0 })
     expect(byId.get('intent-1')).toMatchObject({ x: 0, y: 320 })
+    expect(byId.get('intent-2')).toMatchObject({ x: 152, y: 320 })
     expect(byId.get('evidence-1')).toMatchObject({ x: 0, y: 640 })
-    expect(byId.get('intent-2')).toMatchObject({ x: 0, y: 960 })
-    // The sink evidence and the finding share a depth level: stacked horizontally now.
-    expect(byId.get('evidence-2')).toMatchObject({ x: 0, y: 1280 })
-    expect(byId.get('finding-1')).toMatchObject({ x: 152, y: 1280 })
+    expect(byId.get('evidence-2')).toMatchObject({ x: 152, y: 640 })
+    expect(byId.get('finding-1')).toMatchObject({ x: 0, y: 960 })
   })
 
   it('exposes the auto-expand threshold used by the view', () => {
