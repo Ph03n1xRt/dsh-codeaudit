@@ -133,3 +133,11 @@
   display: flex;
   flex-direction: column;
 }
+
+.versionLine {
+  margin: 0;
+  font-size: 10px;
+  opacity: 0.35;
+  justify-self: end;
+}
+

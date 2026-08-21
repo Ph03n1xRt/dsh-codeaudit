@@ -13,11 +13,13 @@
  *    `<style data-plugin>` tag; the React Flow stylesheet (global class names)
  *    rides the same injection channel as raw text.
  */
+import { readFileSync } from 'node:fs'
 import { mkdir, readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { build } from 'esbuild'
 
 const require = createRequire(import.meta.url)
+const PACKAGE_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
 const mkdirP = () => mkdir('lib', { recursive: true })
 
 /** The plugin id stamped into the loader handoff and the style tags. */
@@ -148,6 +150,7 @@ async function main() {
       // Runtime imports resolve from the installed profile (zod is a declared
       // dependency; the @deepseek-ai packages are host-provided peers).
       packages: 'external',
+      define: { __CODEAUDIT_VERSION__: JSON.stringify(PACKAGE_VERSION) },
       sourcemap: false,
       logLevel: 'info',
     })
@@ -165,6 +168,7 @@ async function main() {
     // The loader's module table answers the react rows; everything else inlines.
     external: ['react', 'react-dom', 'react/jsx-runtime'],
     define: {
+      __CODEAUDIT_VERSION__: JSON.stringify(PACKAGE_VERSION),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV ?? 'production'),
       'import.meta.env.MODE': JSON.stringify(process.env.NODE_ENV ?? 'production'),
       'import.meta.env': JSON.stringify({ MODE: process.env.NODE_ENV ?? 'production' }),

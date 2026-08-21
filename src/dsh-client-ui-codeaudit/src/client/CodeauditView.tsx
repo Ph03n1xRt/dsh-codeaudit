@@ -114,6 +114,7 @@ export function CodeauditView({ useProjection, t }: CodeauditViewProps) {
           <p className={css.metaLine}>技术栈：{codeaudit.engagement.stack}</p>
         )}
         <YakSkillStatus t={t} />
+        <p className={css.versionLine}>{typeof __CODEAUDIT_VERSION__ === 'string' ? __CODEAUDIT_VERSION__ : 'dev'}</p>
       </header>
       <nav className={css.tabs} data-testid="codeaudit-tabs">
         {TABS.map(tabKey => (
