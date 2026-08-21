@@ -39,6 +39,31 @@ const TAB_LABELS = {
 /** Full props of the view entry: session standard kit + the locale seat. */
 export type CodeauditViewProps = PropsRuntime<'conversation.view'> & PropsLocale<'codeaudit'>
 
+
+/** Host-vs-client build versions: fetched from the host skills route. A
+ * mismatch (or an absent route) means the dsh process predates the installed
+ * package — restart dsh — and host-side rules (e.g. the pocScript boundary)
+ * are stale. */
+function HostVersionLine() {
+  const local = typeof __CODEAUDIT_VERSION__ === 'string' ? __CODEAUDIT_VERSION__ : 'dev'
+  const [host, setHost] = useState<string | undefined>(undefined)
+  useEffect(() => {
+    let cancelled = false
+    if (typeof fetch !== 'function') return
+    void fetch('/codeaudit/skills')
+      .then(response => (response.ok ? response.json() as Promise<{ version?: string }> : undefined))
+      .then(payload => { if (!cancelled) setHost(payload?.version) })
+      .catch(() => undefined)
+    return () => { cancelled = true }
+  }, [])
+  const stale = host !== undefined && host !== local
+  return (
+    <p className={css.versionLine} data-testid="codeaudit-version" data-stale={stale ? 'true' : undefined}>
+      {stale ? `宿主 ${host} / 页面 ${local} —— 请重启 dsh` : `v${local}`}
+    </p>
+  )
+}
+
 /** yak-skill availability chip from the host skills-status route; hidden when
  * the route is absent (older host) or the skill is installed. */
 function YakSkillStatus({ t }: { readonly t: PropsLocale<'codeaudit'>['t'] }) {
@@ -114,7 +139,7 @@ export function CodeauditView({ useProjection, t }: CodeauditViewProps) {
           <p className={css.metaLine}>技术栈：{codeaudit.engagement.stack}</p>
         )}
         <YakSkillStatus t={t} />
-        <p className={css.versionLine}>{typeof __CODEAUDIT_VERSION__ === 'string' ? __CODEAUDIT_VERSION__ : 'dev'}</p>
+        <HostVersionLine />
       </header>
       <nav className={css.tabs} data-testid="codeaudit-tabs">
         {TABS.map(tabKey => (

@@ -141,3 +141,9 @@
   justify-self: end;
 }
 
+.versionLine[data-stale='true'] {
+  opacity: 1;
+  color: #dc2626;
+  font-weight: 600;
+}
+

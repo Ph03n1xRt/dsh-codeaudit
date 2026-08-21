@@ -21,7 +21,7 @@ export const name = 'ui-codeaudit'
 /** Services required before the route can register. */
 export const inject = ['webServer']
 
-type SkillStatus = { yak: boolean; error?: string }
+type SkillStatus = { yak: boolean; version?: string; error?: string }
 
 /** Answer one JSON payload. */
 function reply(res: {
@@ -42,6 +42,7 @@ export function apply(ctx: Context): void {
     path: '/codeaudit/skills',
     handler: async (req, res) => {
       const status = async (): Promise<SkillStatus> => ({
+        version: __CODEAUDIT_VERSION__,
         yak: await isYakSkillInstalled(presetSkillsDir()),
         ...(yakSkillLastError() === undefined ? {} : { error: yakSkillLastError() }),
       })
