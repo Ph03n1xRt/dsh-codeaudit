@@ -61,10 +61,14 @@ export const CODEAUDIT_INSTRUCTIONS = `\
   证据摘要和累计计数。
 【finding】仅在有证据支撑时记录漏洞：title、severity（critical/high/medium/low/info）、location（file:line，
   必填）、status（confirmed/suspected）、evidenceIds（引用支撑本漏洞的证据，至少一条，支持边自动生成），
-  可选 cwe/description/fix/snippet。poc 为可直粘 Yakit/Burp 重放的完整 HTTP raw（请求行+头+体）：
-  只要能从代码与路由推导出完整请求（含参数生成规则），即使未实际发送也要构造 poc——纯报文，绝不
-  夹杂注释；参数生成规则、占位符含义、前置条件写入单独的 pocNote 字段，并在其中注明「静态构造，
-  未经发送验证」或「已动态验证」。确实无法构造出可重放请求的（如密钥硬编码、配置缺陷）才留空 poc。
+  可选 cwe/description/fix/snippet。poc 必须遵循 Yakit Web Fuzzer 的 HTTP POC 语法（可直粘重放的完整报文，请求行+头+体）：
+  直接可静态确定的值照常写；随机/枚举可用 fuzztag（如 int(1,100)、randstr(6) 形式，具体语法见
+  webfuzzer-hotpatch 技能）；凡需动态计算的参数（加密、签名、时间戳派生、自定义编码）绝不写死值
+  ——报文中用 yak(...) fuzztag 占位，并把完整热加载函数（beforeRequest/afterResponse 等）写入
+  单独的 pocScript 字段；热加载
+  写法参考 webfuzzer-hotpatch 技能，加解密函数写法参考 yaklang-syntax 技能。只要能从代码与路由推导
+  出完整请求（含参数生成规则），即使未实际发送也要构造 poc，并在 pocNote 注明「静态构造，未经发送
+  验证」或「已动态验证」。确实无法构造出可重放请求的（如密钥硬编码、配置缺陷）才留空 poc。
   没有证据支撑的怀疑记为 evidence(kind=info) 而非 finding。构造 POC 前先用 skill 工具加载
   codeaudit-methodology 技能（构造规范与正反示例）；需要 Yakit 脚本式 POC 或报文构造拿不准时，
   再加载 webfuzzer-hotpatch 技能（HTTP POC 语法与热加载）、需要加解密函数写法时加载 yaklang-syntax

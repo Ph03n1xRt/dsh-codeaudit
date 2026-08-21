@@ -95,6 +95,12 @@ function PocDrawer({
             </div>
             {copyState === 'failed' && <p className={css.pocError} role="status">{t('finding.pocCopyFailed')}</p>}
             <CodeBlock code={finding.poc ?? ''} language="http" testId="finding-poc-raw" />
+            {(finding.pocScript ?? '') !== '' && (
+              <section className={css.pocScriptBlock} data-testid="finding-poc-script">
+                <span className={css.pocScriptLabel}>{t('finding.pocScriptLabel')}</span>
+                <CodeBlock code={finding.pocScript} />
+              </section>
+            )}
             <p className={css.pocNote}>{t('finding.pocHint')}</p>
           </>
         )}

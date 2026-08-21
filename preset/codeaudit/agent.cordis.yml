@@ -215,9 +215,11 @@
           分配的真实 ID（evidenceIds/assetIds/findingIds）。finding 仅限有证据支撑的问题，必须含
           title/severity/location/status，evidenceIds 只能引用本次提交返回的 ID、既往提交返回的 ID 或委派中
           提供的既有 ID，绝不臆测编号；尚未拿到证据 ID 时分两批：先提交证据，再用返回的 ID 提交 finding。
-          能从代码与路由推导出完整请求的漏洞（即使未实际发送）都要构造 poc：完整 HTTP raw 纯报文写入 poc
-          字段，绝不夹注释；参数生成规则、占位符含义写入单独的 pocNote 字段并注明「静态构造，未经发送
-          验证」或「已动态验证」。确实无法构造可重放请求的才留空 poc。构造 POC 前先用 skill 工具
+          能从代码与路由推导出完整请求的漏洞（即使未实际发送）都要构造 poc：必须遵循 Yakit Web Fuzzer 的
+          HTTP POC 语法——纯报文写 poc，随机/枚举可用 fuzztag；加密、签名、时间戳派生等动态值绝不写死，
+          报文用 yak(...) fuzztag 占位、完整热加载函数写 pocScript（写法见 webfuzzer-hotpatch /
+          yaklang-syntax 技能）；参数说明写 pocNote 并注明「静态构造，未经发送验证」或「已动态验证」。确实无法构造
+          可重放请求的才留空 poc。构造 POC 前先用 skill 工具
           加载 codeaudit-methodology 技能（构造规范），需要 HTTP POC 语法/fuzztag/热加载写法时加载
           webfuzzer-hotpatch 技能，需要 yak 语法或加解密函数写法时加载 yaklang-syntax 技能；
           技能不存在时按上述规则直接构造。status=confirmed 需已排查 sanitizer/框架防护，否则用 suspected。asset 的 parentId、finding 的
@@ -260,9 +262,11 @@
           分配的真实 ID（evidenceIds/assetIds/findingIds）。finding 仅限有证据支撑的问题，必须含
           title/severity/location/status，evidenceIds 只能引用本次提交返回的 ID、既往提交返回的 ID 或委派中
           提供的既有 ID，绝不臆测编号；尚未拿到证据 ID 时分两批：先提交证据，再用返回的 ID 提交 finding。
-          能从代码与路由推导出完整请求的漏洞（即使未实际发送）都要构造 poc：完整 HTTP raw 纯报文写入 poc
-          字段，绝不夹注释；参数生成规则、占位符含义写入单独的 pocNote 字段并注明「静态构造，未经发送
-          验证」或「已动态验证」。确实无法构造可重放请求的才留空 poc。构造 POC 前先用 skill 工具
+          能从代码与路由推导出完整请求的漏洞（即使未实际发送）都要构造 poc：必须遵循 Yakit Web Fuzzer 的
+          HTTP POC 语法——纯报文写 poc，随机/枚举可用 fuzztag；加密、签名、时间戳派生等动态值绝不写死，
+          报文用 yak(...) fuzztag 占位、完整热加载函数写 pocScript（写法见 webfuzzer-hotpatch /
+          yaklang-syntax 技能）；参数说明写 pocNote 并注明「静态构造，未经发送验证」或「已动态验证」。确实无法构造
+          可重放请求的才留空 poc。构造 POC 前先用 skill 工具
           加载 codeaudit-methodology 技能（构造规范），需要 HTTP POC 语法/fuzztag/热加载写法时加载
           webfuzzer-hotpatch 技能，需要 yak 语法或加解密函数写法时加载 yaklang-syntax 技能；
           技能不存在时按上述规则直接构造。status=confirmed 需已排查 sanitizer/框架防护，否则用 suspected。asset 的 parentId、finding 的

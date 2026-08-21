@@ -90,9 +90,9 @@ export function apply(ctx: Context): void {
       init: () => codeauditInitialState,
       apply: applyCodeauditEvent,
       view: viewCodeauditState,
-      // v2: the finding node gained poc/pocNote — cached v1 states must be
-      // discarded and refolded from the log, not patched field-by-field.
-      stateVersion: 2,
+      // v3: the finding node gained poc/pocNote/pocScript — cached older
+      // states must be discarded and refolded from the log.
+      stateVersion: 3,
     })
   })
   ctx.inject(['systemPrompt'], (scope) => {

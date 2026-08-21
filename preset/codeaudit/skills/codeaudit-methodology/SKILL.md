@@ -32,7 +32,8 @@ description: 代码审计方法论与可重放 POC 构造规范（配合 codeaud
 
 ## POC 构造规范
 
-- `poc` 只放**纯 HTTP raw**（请求行 + 头 + 体），可直粘 Yakit/Burp 重放，**绝不夹任何注释**；
+- `poc` 必须遵循 **Yakit Web Fuzzer 的 HTTP POC 语法**：纯报文（请求行 + 头 + 体），**绝不夹任何注释**；随机/枚举值可用 fuzztag（`{{int(1,100)}}`、`{{randstr(6)}}`）；
+- **动态计算的值绝不写死**：加密、签名、时间戳派生、自定义编码等，报文中用 `{{yak(...)}}` 占位，并把完整热加载函数（`beforeRequest`/`afterResponse`）写入 `pocScript`——热加载写法见 webfuzzer-hotpatch 技能，加解密函数写法见 yaklang-syntax 技能；
 - 参数生成规则、占位符含义、前置条件（如需先登录拿 token）一律写 `pocNote`，并注明「静态构造，未经发送验证」或「已动态验证」；
 - 占位符约定：目标 `http://<target>`、受害者标识 `<victim>`、可控参数用真实参数名；
 - 从代码可推导出完整请求的漏洞**即使未发送也要构造**；确实构造不出可重放请求的（密钥硬编码、配置缺陷）才留空 `poc`；

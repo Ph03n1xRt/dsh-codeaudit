@@ -79,6 +79,8 @@ export type CodeauditProjectionNode =
     readonly poc: string
     /** Note about the POC (derivation rules, placeholder meanings); '' when none. */
     readonly pocNote: string
+    /** Yakit hot-patch script (yak) required by {{yak(...)}} tags; '' when none. */
+    readonly pocScript: string
     readonly fix: string
     /** The evidence chain backing this finding (supports edges), in submission order. */
     readonly evidenceIds: readonly string[]

@@ -74,6 +74,11 @@ function pocNoteValue(value: unknown): string {
   return capSnippet(optionalString(value))
 }
 
+/** Normalize one hot-patch script: optional string, capped at the POC limit. */
+function pocScriptValue(value: unknown): string {
+  return capPoc(optionalString(value))
+}
+
 function submissionList(value: unknown, name: string): Record<string, unknown>[] {
   if (!Array.isArray(value) || !value.every(item => item !== null && typeof item === 'object' && !Array.isArray(item))) {
     throw new Error(`codeaudit_submit requires ${name} to be an array of objects`)
@@ -226,6 +231,7 @@ function buildReport(state: CodeauditStateView): string {
       `- 修复建议: ${finding.fix === '' ? '（无）' : finding.fix}`,
       ...(finding.poc === '' ? [] : ['- POC (HTTP raw，可直接粘贴 Yakit/Burp 重放):', ...finding.poc.split('\n').map(line => `  ${line}`)]),
       ...(finding.pocNote === '' ? [] : [`- POC 说明: ${finding.pocNote}`]),
+      ...(finding.pocScript === '' ? [] : ['- POC 热加载脚本 (yak):', ...finding.pocScript.split('\n').map(line => `  ${line}`)]),
       '- 证据链:',
       ...evidenceChainOf(finding.id).map((evidenceId, index) => `  ${index + 1}. ${evidenceOf(evidenceId)}`),
     ].join('\n')
@@ -295,6 +301,7 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
         snippet: { type: 'string', description: 'The vulnerable code excerpt (capped).' },
         poc: { type: 'string', description: 'Replayable verification POC: the COMPLETE HTTP raw (request line, headers, body) that reproduces the issue — pasteable straight into Yakit/Burp. NOTHING else: no annotations, no explanations. Construct it from the code/routes whenever a replayable request can be derived (note in pocNote whether it was actually sent); omit only when no replayable request exists.' },
         pocNote: { type: 'string', description: 'Optional note ABOUT the POC: parameter derivation rules, placeholder meanings, preconditions. Never put this inside poc.' },
+        pocScript: { type: 'string', description: 'The complete Yakit hot-patch script (yak) required to replay the poc — REQUIRED whenever the raw uses {{yak(...)}} tags or computed values (encryption, signatures, timestamp-derived params). Implement beforeRequest/afterResponse per the webfuzzer-hotpatch skill; codec/crypto helpers per yaklang-syntax.' },
         evidenceIds: { type: 'array', required: true, description: 'The evidence chain backing this finding (min one; ids from this batch or earlier submissions).', items: { type: 'string' } },
         affectedAssetId: { type: 'string', description: 'Existing affected parent-session asset id, when known.' },
       } } },
@@ -348,6 +355,7 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
           snippet: snippetValue(finding.snippet),
           poc: pocValue(finding.poc),
           pocNote: pocNoteValue(finding.pocNote),
+          pocScript: pocScriptValue(finding.pocScript),
           fix: optionalString(finding.fix),
           evidenceIds: stringList(finding.evidenceIds, 'finding.evidenceIds'),
           ...(typeof finding.affectedAssetId === 'string' ? { affectedAssetId: finding.affectedAssetId } : {}),
@@ -480,6 +488,7 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
       snippet: { type: 'string', description: 'Optional vulnerable code excerpt (capped).' },
       poc: { type: 'string', description: 'Optional replayable verification POC: the COMPLETE HTTP raw (request line, headers, body) that reproduces the issue — pasteable straight into Yakit/Burp, with NOTHING else in it. Construct it from the code/routes whenever a replayable request can be derived — note in pocNote whether it was actually sent.' },
       pocNote: { type: 'string', description: 'Optional note ABOUT the POC: parameter derivation rules, placeholder meanings, preconditions — this is the place for annotations, never inside poc.' },
+      pocScript: { type: 'string', description: 'The complete Yakit hot-patch script (yak) required to replay the poc — REQUIRED whenever the raw uses {{yak(...)}} tags or computed values (encryption, signatures, timestamp-derived params).' },
       affectedAssetId: { type: 'string', description: 'Optional asset id this finding affects.' },
     },
     output: {
@@ -504,6 +513,7 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
         snippet: snippetValue(args.snippet),
         poc: pocValue(args.poc),
         pocNote: pocNoteValue(args.pocNote),
+        pocScript: pocScriptValue(args.pocScript),
         fix: args.fix ?? '',
         evidenceIds: args.evidenceIds,
         ...(args.affectedAssetId !== undefined ? { affectedAssetId: args.affectedAssetId } : {}),

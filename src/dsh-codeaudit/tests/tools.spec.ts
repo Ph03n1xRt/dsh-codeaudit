@@ -47,6 +47,7 @@ async function fullChain(
     description: 'User input concatenated into SQL', fix: 'Use a parameterized query',
     poc: 'POST /api/order HTTP/1.1\nHost: shop.example.com\n\nq=1%27',
     pocNote: '占位符 q 为注入点。',
+    pocScript: 'beforeRequest = func(req) {\n    return req\n}',
   }, SESSION_ID) as Record<string, unknown>
   return { engagement, intentA, entry, intentB, sink, finding }
 }
@@ -606,6 +607,7 @@ describe('codeaudit_graph and codeaudit_report', () => {
     expect(markdown).toContain('- POC (HTTP raw，可直接粘贴 Yakit/Burp 重放):')
     expect(markdown).toContain('  POST /api/order HTTP/1.1')
     expect(markdown).toContain('- POC 说明: 占位符 q 为注入点。')
+    expect(markdown).toContain('- POC 热加载脚本 (yak):')
     expect(markdown).toContain('- 影响资产: （未关联）')
     expect(markdown).toContain('- [repo] shop-backend（main branch）')
     expect(markdown).toContain('- [endpoint] GET /api/order ← shop-backend')

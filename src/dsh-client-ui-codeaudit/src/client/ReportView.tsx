@@ -54,6 +54,7 @@ function reportOf(codeaudit: CodeauditProjection, t: ReportViewProps['t']): stri
       `- ${t('report.fix')}: ${finding.fix === '' ? t('report.none') : finding.fix}`,
       ...((finding.poc ?? '') === '' ? [] : [`- ${t('finding.poc')} (HTTP raw):`, ...finding.poc.split('\n').map(line => `  ${line}`)]),
       ...((finding.pocNote ?? '') === '' ? [] : [`- ${t('finding.pocNoteLabel')}: ${finding.pocNote}`]),
+      ...((finding.pocScript ?? '') === '' ? [] : [`- ${t('finding.pocScriptLabel')}:`, ...(finding.pocScript ?? '').split('\n').map(line => `  ${line}`)]),
       `- ${t('report.evidence')}:`,
       ...finding.evidenceIds.map((evidenceId, index) => `  ${index + 1}. ${evidenceOf(evidenceId)}`),
       '',

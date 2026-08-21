@@ -123,6 +123,12 @@ export const codeauditFindingSchema = z.object({
    * meanings, preconditions) — never part of the raw itself.
    */
   pocNote: z.string().default(''),
+  /**
+   * The Yakit hot-patch script (yak) needed to replay the poc: required when
+   * the raw carries {{yak(...)}} tags or computed values (encryption,
+   * signatures, timestamp-derived params). Capped at POC_MAX_CHARS.
+   */
+  pocScript: z.string().default(''),
   /** Fix suggestion. */
   fix: z.string().default(''),
   /** Optional asset the finding affects. */
