@@ -12,6 +12,7 @@
  * @module dsh-codeaudit
  */
 
+import { fileURLToPath } from 'node:url'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-projection'
@@ -25,6 +26,7 @@ import {
 } from './projection.ts'
 import { CodeauditStore } from './store.ts'
 import { registerCodeauditTools } from './tools.ts'
+import { ensureYakSkill } from './yakSkill.ts'
 
 export type { CodeauditStateView } from './store.ts'
 export {
@@ -76,6 +78,14 @@ export function apply(ctx: Context): void {
     await store.dispose()
   }, 'codeaudit.domainClose')
   registerCodeauditTools(ctx, store)
+  // Best-effort: fetch the official Yakit skill into this preset's skills
+  // directory on first mount (the shipped file doubles as the installed
+  // flag). Offline or read-only installs simply skip; the audit does not
+  // depend on it. CODEAUDIT_SKIP_YAK_SKILL=1 opts out entirely.
+  if (process.env.CODEAUDIT_SKIP_YAK_SKILL !== '1') {
+    const skillsDir = fileURLToPath(new URL('../preset/codeaudit/skills/', import.meta.url))
+    void ensureYakSkill(skillsDir).catch(() => undefined)
+  }
   ctx.inject(['sessionProjections'], (projectionCtx) => {
     // The unit child activates only when a projection registry is composed
     // (headless assemblies without the seam stay unaffected). Standing fold:
