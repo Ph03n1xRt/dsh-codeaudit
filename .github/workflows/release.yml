@@ -19,13 +19,16 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Install and build
+        # The bundle manifest spec imports the lib/ artifacts, so build first.
+        run: npm ci && npm run build
+
       - name: Test
-        run: npm ci && npm test
+        run: npm test
 
       - name: Build release archive
         shell: bash
         run: |
-          npm run build
           mkdir dist
           npm pack --pack-destination dist
           mv dist/*.tgz dist/dsh-codeaudit.tar.gz
