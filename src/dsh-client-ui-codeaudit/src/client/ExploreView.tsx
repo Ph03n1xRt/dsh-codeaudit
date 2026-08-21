@@ -10,7 +10,7 @@
  * code snippet recorded with the evidence or finding.
  */
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   Background,
   BaseEdge,
@@ -31,11 +31,14 @@ import '@xyflow/react/dist/style.css'
 import type {
   CodeauditEdgeKind,
   CodeauditProjection,
+  CodeauditProjectionNode,
   CodeauditSeverity,
 } from '../../../dsh-codeaudit/src/client.ts'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import {
+  AUTO_EXPAND_MAX_NODES,
   EXPLORE_NODE_SIZE,
+  buildExploreModel,
   findingChainIds,
   layoutExploration,
   type ExploreGraphNode,
@@ -73,15 +76,33 @@ const SEVERITY_LABELS: Record<CodeauditSeverity, CodeauditKey> = {
 }
 
 /** The React Flow node payload of one placed chain node (type alias: the node data must satisfy Record<string, unknown>). */
-type FlowNodeData = { readonly node: ExploreGraphNode }
+type FlowNodeData = { readonly node: ExploreGraphNode; readonly expanded?: boolean }
 
 /** One custom flow node: a kind badge over the title and detail line, with source/target handles. */
-function ChainNode({ data, t }: NodeProps & { t: PropsLocale<'codeaudit'>['t'] }) {
-  const node = (data as FlowNodeData).node
+function ChainNode({ data, t, onToggleIntent }: NodeProps & { t: PropsLocale<'codeaudit'>['t']; onToggleIntent: (intentId: string) => void }) {
+  const flowData = data as FlowNodeData
+  const node = flowData.node
   return (
     <div className={css.node} data-kind={node.kind} data-severity={node.severity} data-testid={`explore-node-${node.kind}`}>
       <Handle type="target" position={Position.Left} className={css.handle} />
       <span className={css.badge}>{t(KIND_LABELS[node.kind])}</span>
+      {node.kind === 'intent' && node.evidenceCount > 0 && (
+        <button
+          type="button"
+          className={css.expandToggle}
+          data-testid={`codeaudit-explore-toggle-${node.id}`}
+          aria-label={t('explore.toggle')}
+          title={t('explore.toggle')}
+          onClick={(event) => {
+            event.stopPropagation()
+            onToggleIntent(node.id)
+          }}
+        >
+          <span className={css.chevron} data-expanded={flowData.expanded === true ? 'true' : undefined} aria-hidden="true">▸</span>
+          <span className={css.countBadge} data-count="evidences">{t('explore.evidences', { count: node.evidenceCount })}</span>
+          {node.findingCount > 0 && <span className={css.countBadge} data-count="findings">{t('explore.findingsShort', { count: node.findingCount })}</span>}
+        </button>
+      )}
       <span className={css.title} title={node.title}>{node.title}</span>
       {node.detail !== '' && <span className={css.detail} title={node.detail}>{node.detail}</span>}
       {node.severity !== undefined && (
@@ -158,6 +179,10 @@ export function ExploreView({ codeaudit, t }: ExploreViewProps) {
   const [filter, setFilter] = useState<ChainFilter>('all')
   const [layout, setLayout] = useState<LayoutMode>('horizontal')
   const [selectedNode, setSelectedNode] = useState<ExploreGraphNode | null>(null)
+  // null = adaptive: expand everything while the graph is small, collapse the
+  // evidences into their intents once it grows past AUTO_EXPAND_MAX_NODES;
+  // the first manual toggle pins an explicit set.
+  const [expanded, setExpanded] = useState<ReadonlySet<string> | null>(null)
   // The 仅漏洞链路 filter keeps the nodes on any path ending at a finding and
   // drops dead-end exploration branches, so a long audit stays readable.
   const chainIds = useMemo(() => filter === 'findings' ? findingChainIds(codeaudit) : undefined, [codeaudit, filter])
@@ -166,15 +191,29 @@ export function ExploreView({ codeaudit, t }: ExploreViewProps) {
     nodes: codeaudit.nodes.filter(node => chainIds.has(node.id)),
     edges: codeaudit.edges.filter(edge => chainIds.has(edge.sourceId) && chainIds.has(edge.targetId)),
   }, [codeaudit, chainIds])
-  const { nodes, edges } = useMemo(() => layoutExploration(scoped, { orientation: layout }), [scoped, layout])
+  const effectiveExpanded = useMemo(() => expanded ?? (scoped.nodes.length <= AUTO_EXPAND_MAX_NODES
+    ? new Set(scoped.nodes.filter((node): node is CodeauditProjectionNode & { kind: 'intent' } => node.kind === 'intent').map(node => node.id))
+    : new Set<string>()), [scoped, expanded])
+  // Toggling flips the CURRENT visual state, whatever produced it (adaptive
+  // or a previous manual toggle).
+  const toggleIntent = useCallback((intentId: string): void => {
+    setExpanded(previous => {
+      const next = new Set(previous ?? effectiveExpanded)
+      if (next.has(intentId)) next.delete(intentId)
+      else next.add(intentId)
+      return next
+    })
+  }, [effectiveExpanded])
+  const model = useMemo(() => buildExploreModel(scoped, effectiveExpanded), [scoped, effectiveExpanded])
+  const { nodes, edges } = useMemo(() => layoutExploration(model, { orientation: layout }), [model, layout])
   const flowNodes = useMemo<FlowNode<FlowNodeData, 'codeaudit'>[]>(() =>
     nodes.map(node => ({
       id: node.id,
       type: 'codeaudit',
       position: { x: node.x, y: node.y },
-      data: { node },
+      data: { node, expanded: node.kind === 'intent' ? effectiveExpanded.has(node.id) : undefined },
       style: EXPLORE_NODE_SIZE,
-    })), [nodes])
+    })), [nodes, effectiveExpanded])
   const flowEdges = useMemo<FlowEdge[]>(() =>
     edges.map(edge => ({
       id: edge.id,
@@ -186,8 +225,8 @@ export function ExploreView({ codeaudit, t }: ExploreViewProps) {
   // The locale seat rides into the custom nodes through a render-scoped type
   // map (React Flow re-renders nodes when the map identity changes).
   const nodeTypes = useMemo<NodeTypes>(() => ({
-    codeaudit: (props: NodeProps) => <ChainNode {...props} t={t} />,
-  }), [t])
+    codeaudit: (props: NodeProps) => <ChainNode {...props} t={t} onToggleIntent={toggleIntent} />,
+  }), [t, toggleIntent])
   const filterOptions = [
     { key: 'all', label: t('explore.mode.all'), testId: 'codeaudit-explore-filter-all' },
     { key: 'findings', label: t('explore.mode.findings'), testId: 'codeaudit-explore-filter-findings' },

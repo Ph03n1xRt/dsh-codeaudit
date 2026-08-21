@@ -1,15 +1,24 @@
 /**
- * Pure graph-layout helpers for the codeaudit view tabs: layered positions for
- * the audit chain (engagement → intents → evidences → derived intents →
- * findings, with the finding's `supports` evidence edges drawn inline so each
- * vulnerability's full chain entry → … → sink → finding is visible in one
- * graph) and for the asset tree (parent → children). Pure functions of the
- * standing projection — fully unit-testable, no React Flow involvement.
+ * Pure graph-layout helpers for the codeaudit view tabs.
+ *
+ * `buildExploreModel` aggregates the standing projection into what the
+ * exploration graph actually draws: the engagement, the intents, the
+ * findings, and — only for intents the user expanded — their evidences.
+ * Edges of a collapsed evidence remap to its owning intent (supports →
+ * intent→finding, derived_from → intent→intent; yields is absorbed), so the
+ * collapsed skeleton still reads 任务 → 意图 → 漏洞 while a long audit stays
+ * legible instead of turning into a 200-card blob.
+ *
+ * `layoutExploration` then positions that model (BFS depth layers, axes
+ * swappable for vertical reading); `layoutAssets` layers the asset tree.
+ * All pure functions of the standing projection — fully unit-testable, no
+ * React Flow involvement.
  */
 
 import type {
   CodeauditProjection,
   CodeauditProjectionEdge,
+  CodeauditProjectionEngagement,
   CodeauditProjectionNode,
   CodeauditSeverity,
   CodeauditAssetType,
@@ -18,6 +27,23 @@ import type {
 
 /** Node kinds drawn in the audit graph. */
 export type ExploreNodeKind = 'engagement' | 'intent' | 'evidence' | 'finding'
+
+/** Per-intent aggregate counts shown as badges (full counts, ignoring expansion). */
+export interface IntentStats {
+  readonly evidences: number
+  readonly findings: number
+}
+
+/** The aggregated, expandable view model the exploration graph renders. */
+export interface ExploreModel {
+  readonly engagement: CodeauditProjectionEngagement | null
+  /** The visible nodes: intents, findings, and the expanded intents' evidences. */
+  readonly nodes: readonly CodeauditProjectionNode[]
+  /** Visible edges with collapsed-evidence edges remapped to the owning intent. */
+  readonly edges: readonly CodeauditProjectionEdge[]
+  /** Full per-intent counts, by intent id. */
+  readonly intentStats: ReadonlyMap<string, IntentStats>
+}
 
 /** One placed audit node (position in graph units, plus the drawer payload). */
 export interface ExploreGraphNode {
@@ -29,6 +55,10 @@ export interface ExploreGraphNode {
   readonly status: CodeauditFindingStatus | undefined
   readonly location: string
   readonly snippet: string
+  /** Intent nodes: aggregate evidence count badge. */
+  readonly evidenceCount: number
+  /** Intent nodes: aggregate finding count badge. */
+  readonly findingCount: number
   readonly x: number
   readonly y: number
 }
@@ -59,6 +89,13 @@ export interface LayoutOptions {
 }
 
 /**
+ * At or below this many nodes the graph starts fully expanded; beyond it the
+ * evidences start collapsed into their intents (the skeleton stays readable;
+ * any intent expands on demand).
+ */
+export const AUTO_EXPAND_MAX_NODES = 15
+
+/**
  * The node ids lying on a path that ends at a finding (the finding itself,
  * its proving intent and supporting evidences, and every ancestor along
  * spawns/yields/derived_from edges). Dead-end exploration branches — intents
@@ -83,6 +120,71 @@ export function findingChainIds(projection: CodeauditProjection): Set<string> {
     for (const source of sourcesOf.get(id) ?? []) queue.push(source)
   }
   return keep
+}
+
+/**
+ * Aggregate the projection into the expandable exploration model.
+ *
+ * Evidences of a collapsed intent drop out of `nodes`; their edges remap to
+ * the owning intent (yields is absorbed; supports/derived_from re-anchor),
+ * with parallel remapped edges de-duplicated. Edges referencing nodes the
+ * model does not carry (e.g. a supports edge to a foreign evidence) drop.
+ * @param projection - the (possibly finding-filtered) standing projection.
+ * @param expanded - the intent ids whose evidences stay visible.
+ */
+export function buildExploreModel(projection: CodeauditProjection, expanded: ReadonlySet<string>): ExploreModel {
+  const intents = projection.nodes.filter((node): node is CodeauditProjectionNode & { kind: 'intent' } => node.kind === 'intent')
+  const evidences = projection.nodes.filter((node): node is CodeauditProjectionNode & { kind: 'evidence' } => node.kind === 'evidence')
+  const findings = projection.nodes.filter((node): node is CodeauditProjectionNode & { kind: 'finding' } => node.kind === 'finding')
+
+  const ownerOfEvidence = new Map(evidences.map(evidence => [evidence.id, evidence.intentId]))
+  const evidenceVisible = (id: string): boolean => {
+    const owner = ownerOfEvidence.get(id)
+    return owner !== undefined && expanded.has(owner)
+  }
+
+  const intentStats = new Map<string, IntentStats>()
+  for (const intent of intents) intentStats.set(intent.id, { evidences: 0, findings: 0 })
+  for (const evidence of evidences) {
+    const stats = intentStats.get(evidence.intentId)
+    if (stats !== undefined) intentStats.set(evidence.intentId, { evidences: stats.evidences + 1, findings: stats.findings })
+  }
+  for (const finding of findings) {
+    const stats = intentStats.get(finding.intentId)
+    if (stats !== undefined) intentStats.set(finding.intentId, { evidences: stats.evidences, findings: stats.findings + 1 })
+  }
+
+  const visibleIds = new Set<string>([projection.engagement?.id ?? 'engagement-1'])
+  for (const intent of intents) visibleIds.add(intent.id)
+  for (const finding of findings) visibleIds.add(finding.id)
+  for (const evidence of evidences) if (evidenceVisible(evidence.id)) visibleIds.add(evidence.id)
+
+  // Remap edges whose source evidence is collapsed onto the owning intent;
+  // de-duplicate parallel remapped edges; drop edges with missing endpoints.
+  const seen = new Set<string>()
+  const edges: CodeauditProjectionEdge[] = []
+  for (const edge of projection.edges) {
+    if (!CHAIN_EDGE_KINDS.has(edge.kind)) continue
+    let { sourceId, targetId } = edge
+    if (edge.kind === 'yields' && !evidenceVisible(targetId)) continue
+    if ((edge.kind === 'derived_from' || edge.kind === 'supports') && !evidenceVisible(sourceId)) {
+      const owner = ownerOfEvidence.get(sourceId)
+      if (owner === undefined) continue
+      sourceId = owner
+    }
+    if (!visibleIds.has(sourceId) || !visibleIds.has(targetId)) continue
+    const dedupeKey = `${edge.kind}:${sourceId}→${targetId}`
+    if (seen.has(dedupeKey)) continue
+    seen.add(dedupeKey)
+    edges.push({ ...edge, sourceId, targetId })
+  }
+
+  const nodes: CodeauditProjectionNode[] = [
+    ...intents,
+    ...evidences.filter(evidence => evidenceVisible(evidence.id)),
+    ...findings,
+  ]
+  return { engagement: projection.engagement, nodes, edges, intentStats }
 }
 
 /** Assign every reachable id a BFS depth from the roots; others hang below. */
@@ -164,48 +266,54 @@ function snippetOf(node: CodeauditProjectionNode): string {
 }
 
 /**
- * Layered layout of the audit chain: the engagement at column 0, every node
- * one column per hop along its chain edges (supports edges included, so an
- * evidence can sit one hop before its finding); nodes unreachable from the
- * engagement hang in the last column. Parent edges are excluded. The
- * orientation picks the reading direction: horizontal places depth on the
- * x axis (wide), vertical on the y axis (tall — usually the better fit for a
- * narrow side panel carrying a long chain).
- * @param projection - the standing codeaudit projection.
+ * Layered layout of the aggregated audit model: the engagement at column 0,
+ * every node one column per hop along its (possibly remapped) edges; nodes
+ * unreachable from the engagement hang in the last column. The orientation
+ * picks the reading direction: horizontal places depth on the x axis (wide),
+ * vertical on the y axis (tall — usually the better fit for a narrow side
+ * panel carrying a long chain).
+ * @param model - the aggregated exploration model.
  * @param options - layout options (orientation, default horizontal).
  * @returns the placed nodes and their chain edges.
  */
-export function layoutExploration(projection: CodeauditProjection, options: LayoutOptions = {}): {
+export function layoutExploration(model: ExploreModel, options: LayoutOptions = {}): {
   nodes: ExploreGraphNode[]
-  edges: CodeauditProjectionEdge[]
+  edges: readonly CodeauditProjectionEdge[]
 } {
   const vertical = options.orientation === 'vertical'
-  const edges = projection.edges.filter(edge => CHAIN_EDGE_KINDS.has(edge.kind))
-  const engagementId = projection.engagement === null ? 'engagement-1' : projection.engagement.id
+  const edges = model.edges
+  const engagementId = model.engagement === null ? 'engagement-1' : model.engagement.id
   const depth = depthsOf([engagementId], edges)
   const engagement: ExploreGraphNode = {
     id: engagementId,
     kind: 'engagement',
-    title: projection.engagement === null ? '' : projection.engagement.target,
-    detail: projection.engagement === null ? '' : projection.engagement.objective,
+    title: model.engagement === null ? '' : model.engagement.target,
+    detail: model.engagement === null ? '' : model.engagement.objective,
     severity: undefined,
     status: undefined,
     location: '',
     snippet: '',
+    evidenceCount: 0,
+    findingCount: 0,
     x: 0,
     y: 0,
   }
   const chain: Array<ExploreGraphNode & { readonly x: number; readonly y: number }> = stackByDepth(
-    [engagement, ...projection.nodes.map(node => ({
-      id: node.id,
-      kind: node.kind,
-      title: titleOf(node),
-      detail: detailOf(node),
-      severity: node.kind === 'finding' ? node.severity : undefined,
-      status: node.kind === 'finding' ? node.status : undefined,
-      location: locationOf(node),
-      snippet: snippetOf(node),
-    }))],
+    [engagement, ...model.nodes.map(node => {
+      const stats = node.kind === 'intent' ? model.intentStats.get(node.id) : undefined
+      return {
+        id: node.id,
+        kind: node.kind,
+        title: titleOf(node),
+        detail: detailOf(node),
+        severity: node.kind === 'finding' ? node.severity : undefined,
+        status: node.kind === 'finding' ? node.status : undefined,
+        location: locationOf(node),
+        snippet: snippetOf(node),
+        evidenceCount: stats?.evidences ?? 0,
+        findingCount: stats?.findings ?? 0,
+      }
+    })],
     depth,
     320,
     152,

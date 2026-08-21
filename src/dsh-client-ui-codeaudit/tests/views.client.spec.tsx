@@ -195,3 +195,46 @@ describe('ExploreView', () => {
     expect(screen.getByTestId('codeaudit-explore-empty').textContent).toContain('尚无漏洞结论')
   })
 })
+
+describe('ExploreView collapse', () => {
+  /** 24 nodes (over the auto-expand threshold): 20 evidences under one intent. */
+  function bigProjection(): CodeauditProjection {
+    const evidences = Array.from({ length: 20 }, (_, index) => ({
+      id: `evidence-${index + 1}`, kind: 'evidence' as const, evidenceKind: 'sink' as const, intentId: 'intent-1',
+      location: `src/A.java:${index + 1}`, detail: `sink ${index + 1}`, snippet: '', confidence: 0.5,
+    }))
+    const edges = [
+      { id: 'edge-s', kind: 'spawns' as const, sourceId: 'engagement-1', targetId: 'intent-1' },
+      ...evidences.map((evidence, index) => ({ id: `edge-y-${index + 1}`, kind: 'yields' as const, sourceId: 'intent-1', targetId: evidence.id })),
+      { id: 'edge-p', kind: 'proves' as const, sourceId: 'intent-1', targetId: 'finding-1' },
+      { id: 'edge-v', kind: 'supports' as const, sourceId: 'evidence-1', targetId: 'finding-1' },
+    ]
+    return {
+      engagement: ENGAGEMENT,
+      nodes: [
+        { id: 'intent-1', kind: 'intent', title: 'trace everything', detail: '' },
+        ...evidences,
+        { id: 'finding-1', kind: 'finding', intentId: 'intent-1', title: 'sqli', severity: 'high', status: 'confirmed', cwe: '', description: '', location: 'a:1', snippet: '', fix: '', evidenceIds: ['evidence-1'], affectedAssetId: undefined },
+      ],
+      assets: [],
+      edges,
+      counts: { intents: 1, evidences: 20, findings: 1, assets: 0 },
+    }
+  }
+
+  it('starts collapsed past the threshold and expands an intent on demand', () => {
+    render(<ExploreView codeaudit={bigProjection()} t={t} />)
+    // Collapsed by default: no evidence cards, the intent carries the counts.
+    expect(screen.queryAllByTestId('explore-node-evidence')).toHaveLength(0)
+    const toggle = screen.getByTestId('codeaudit-explore-toggle-intent-1')
+    expect(toggle.textContent).toContain('证据 20')
+    expect(toggle.textContent).toContain('漏洞 1')
+    // Expanding reveals the evidences; collapsing hides them again. Re-query
+    // the toggle after each click — React Flow rebuilds node DOM elements
+    // when the node types map changes.
+    fireEvent.click(toggle)
+    expect(screen.getAllByTestId('explore-node-evidence')).toHaveLength(20)
+    fireEvent.click(screen.getByTestId('codeaudit-explore-toggle-intent-1'))
+    expect(screen.queryAllByTestId('explore-node-evidence')).toHaveLength(0)
+  })
+})

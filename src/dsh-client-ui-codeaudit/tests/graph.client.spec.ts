@@ -1,14 +1,15 @@
 /**
- * Pure graph-layout acceptance: `layoutExploration` (BFS layers from the
- * engagement over chain edges only — supports edges included, so a finding's
- * evidence chain draws inline) and `layoutAssets` (parent-tree layers)
- * produce the expected columns, stacking, and edge filtering.
+ * Pure graph-layout acceptance: `buildExploreModel` (the aggregated,
+ * expandable model — collapsed evidences, remapped edges, per-intent counts),
+ * `layoutExploration` (BFS depth layers over the model, supports edges drawn
+ * inline, axes swappable), `findingChainIds` (the 仅漏洞链路 filter), and
+ * `layoutAssets` (parent-tree layers).
  * @module
  */
 
 import { describe, expect, it } from 'vitest'
 import type { CodeauditProjection } from '../../dsh-codeaudit/src/client.ts'
-import { findingChainIds, layoutAssets, layoutExploration } from '../src/client/graph.ts'
+import { AUTO_EXPAND_MAX_NODES, buildExploreModel, findingChainIds, layoutAssets, layoutExploration } from '../src/client/graph.ts'
 
 /** A chain projection: engagement → intent → entry evidence → derived intent → sink evidence → finding. */
 function chainProjection(): CodeauditProjection {
@@ -38,15 +39,72 @@ function chainProjection(): CodeauditProjection {
   }
 }
 
+/** The id set expanding every intent of one projection. */
+function allExpanded(projection: CodeauditProjection): Set<string> {
+  return new Set(projection.nodes
+    .filter((node): node is Extract<CodeauditProjection['nodes'][number], { kind: 'intent' }> => node.kind === 'intent')
+    .map(node => node.id))
+}
+
+describe('buildExploreModel', () => {
+  it('collapsed: hides the evidences, remaps their edges to the owning intent, and reports counts', () => {
+    const model = buildExploreModel(chainProjection(), new Set())
+    // Only the skeleton is visible: intents + findings, no evidences.
+    expect(model.nodes.map(node => node.id)).toEqual(['intent-1', 'intent-2', 'finding-1'])
+    // yields absorbed; derived_from/supports re-anchored on the owning intent;
+    // the parent edge belongs to the asset graph and drops.
+    expect(model.edges).toEqual([
+      { id: 'edge-1', kind: 'spawns', sourceId: 'engagement-1', targetId: 'intent-1' },
+      { id: 'edge-3', kind: 'derived_from', sourceId: 'intent-1', targetId: 'intent-2' },
+      { id: 'edge-5', kind: 'proves', sourceId: 'intent-2', targetId: 'finding-1' },
+      { id: 'edge-6', kind: 'supports', sourceId: 'intent-2', targetId: 'finding-1' },
+    ])
+    expect(model.intentStats.get('intent-1')).toEqual({ evidences: 1, findings: 0 })
+    expect(model.intentStats.get('intent-2')).toEqual({ evidences: 1, findings: 1 })
+  })
+
+  it('expanded: keeps every evidence and its original edges', () => {
+    const model = buildExploreModel(chainProjection(), allExpanded(chainProjection()))
+    // The model groups by node kind (intents, then evidences, then findings);
+    // the layout sorts by depth afterwards.
+    expect(model.nodes.map(node => node.id)).toEqual(['intent-1', 'intent-2', 'evidence-1', 'evidence-2', 'finding-1'])
+    expect(model.edges.map(edge => edge.id)).toEqual(['edge-1', 'edge-2', 'edge-3', 'edge-4', 'edge-5', 'edge-6'])
+    // Mixed expansion: only the expanded intent's evidence shows.
+    const mixed = buildExploreModel(chainProjection(), new Set(['intent-2']))
+    expect(mixed.nodes.map(node => node.id)).toEqual(['intent-1', 'intent-2', 'evidence-2', 'finding-1'])
+    expect(mixed.edges.map(edge => edge.id)).toEqual(['edge-1', 'edge-3', 'edge-4', 'edge-5', 'edge-6'])
+  })
+
+  it('de-duplicates parallel remapped edges', () => {
+    const projection: CodeauditProjection = {
+      ...chainProjection(),
+      nodes: [
+        ...chainProjection().nodes,
+        { id: 'evidence-3', kind: 'evidence', evidenceKind: 'sanitizer', intentId: 'intent-2', location: '', detail: 'escaper present', snippet: '', confidence: 0.5 },
+      ],
+      edges: [
+        ...chainProjection().edges,
+        { id: 'edge-8', kind: 'yields', sourceId: 'intent-2', targetId: 'evidence-3' },
+        { id: 'edge-9', kind: 'supports', sourceId: 'evidence-3', targetId: 'finding-1' },
+      ],
+    }
+    const model = buildExploreModel(projection, new Set())
+    // evidence-2 and evidence-3 both support finding-1: one remapped
+    // intent-2→finding-1 supports edge survives.
+    const supports = model.edges.filter(edge => edge.kind === 'supports')
+    expect(supports).toEqual([{ id: 'edge-6', kind: 'supports', sourceId: 'intent-2', targetId: 'finding-1' }])
+  })
+})
+
 describe('layoutExploration', () => {
   it('lays a pure chain one column per hop with supports edges drawn inline', () => {
-    const { nodes, edges } = layoutExploration(chainProjection())
+    const { nodes, edges } = layoutExploration(buildExploreModel(chainProjection(), allExpanded(chainProjection())))
     expect(edges.map(edge => edge.kind)).toEqual(['spawns', 'yields', 'derived_from', 'yields', 'proves', 'supports'])
     const byId = new Map(nodes.map(node => [node.id, node]))
     expect(byId.get('engagement-1')).toMatchObject({ kind: 'engagement', title: 'shop-backend', x: 0, y: 0 })
-    expect(byId.get('intent-1')).toMatchObject({ kind: 'intent', title: 'trace order', detail: 'source → sink', x: 320, y: 0 })
+    expect(byId.get('intent-1')).toMatchObject({ kind: 'intent', title: 'trace order', detail: 'source → sink', x: 320, y: 0, evidenceCount: 1 })
     expect(byId.get('evidence-1')).toMatchObject({ kind: 'evidence', title: 'q reaches DAO', detail: 'src/OrderController.java:42 [entry] · 0.9', location: 'src/OrderController.java:42', snippet: 'find(@RequestParam String q)', x: 640, y: 0 })
-    expect(byId.get('intent-2')).toMatchObject({ kind: 'intent', x: 960, y: 0 })
+    expect(byId.get('intent-2')).toMatchObject({ kind: 'intent', x: 960, y: 0, evidenceCount: 1, findingCount: 1 })
     // The supports edge pulls the finding into the sink evidence's column:
     // entry(2) → derived intent(3) → sink evidence(4) ≈ finding(4), stacked.
     expect(byId.get('evidence-2')).toMatchObject({ kind: 'evidence', x: 1280, y: 0 })
@@ -67,7 +125,7 @@ describe('layoutExploration', () => {
         { id: 'edge-9', kind: 'yields', sourceId: 'intent-1', targetId: 'evidence-3' },
       ],
     }
-    const { nodes, edges } = layoutExploration(projection)
+    const { nodes, edges } = layoutExploration(buildExploreModel(projection, allExpanded(projection)))
     expect(edges.some(edge => edge.kind === 'parent')).toBe(false)
     const layerOne = nodes.filter(node => node.x === 320).sort((a, b) => a.y - b.y)
     expect(layerOne.map(node => node.id)).toEqual(['intent-1', 'intent-3'])
@@ -85,16 +143,16 @@ describe('layoutExploration', () => {
         { id: 'finding-9', kind: 'finding', intentId: 'intent-9', title: 'orphan', severity: 'low', status: 'suspected', cwe: '', description: '', location: 'a:1', snippet: '', fix: '', evidenceIds: ['evidence-9'], affectedAssetId: undefined },
       ],
     }
-    const { nodes } = layoutExploration(projection)
+    const { nodes } = layoutExploration(buildExploreModel(projection, allExpanded(projection)))
     const orphan = nodes.find(node => node.id === 'finding-9')!
     expect(orphan.x).toBeGreaterThan(1280) // one column past the deepest chain column
     // A null engagement still yields an engagement start node with empty text.
-    const engagementless = layoutExploration({ ...projection, engagement: null })
+    const engagementless = layoutExploration(buildExploreModel({ ...projection, engagement: null }, allExpanded(projection)))
     expect(engagementless.nodes[0]).toMatchObject({ id: 'engagement-1', kind: 'engagement', title: '', x: 0, y: 0 })
   })
 
   it('places depth on the y axis in vertical mode, siblings side by side', () => {
-    const { nodes } = layoutExploration(chainProjection(), { orientation: 'vertical' })
+    const { nodes } = layoutExploration(buildExploreModel(chainProjection(), allExpanded(chainProjection())), { orientation: 'vertical' })
     const byId = new Map(nodes.map(node => [node.id, node]))
     expect(byId.get('engagement-1')).toMatchObject({ x: 0, y: 0 })
     expect(byId.get('intent-1')).toMatchObject({ x: 0, y: 320 })
@@ -103,6 +161,10 @@ describe('layoutExploration', () => {
     // The sink evidence and the finding share a depth level: stacked horizontally now.
     expect(byId.get('evidence-2')).toMatchObject({ x: 0, y: 1280 })
     expect(byId.get('finding-1')).toMatchObject({ x: 152, y: 1280 })
+  })
+
+  it('exposes the auto-expand threshold used by the view', () => {
+    expect(AUTO_EXPAND_MAX_NODES).toBeGreaterThan(0)
   })
 })
 
