@@ -26,7 +26,6 @@ import {
 } from './projection.ts'
 import { CodeauditStore } from './store.ts'
 import { registerCodeauditTools } from './tools.ts'
-import { ensureYakSkill, presetSkillsDir } from './yakSkill.ts'
 
 export { ensureYakSkill, isYakSkillInstalled, presetSkillsDir, yakSkillLastError, YAK_SKILL_URL } from './yakSkill.ts'
 
@@ -80,16 +79,6 @@ export function apply(ctx: Context): void {
     await store.dispose()
   }, 'codeaudit.domainClose')
   registerCodeauditTools(ctx, store)
-  // Best-effort: fetch the official Yakit skill into this preset's skills
-  // directory on first mount (the shipped file doubles as the installed
-  // flag). Failures are logged and surfaced by the Web skills-status route;
-  // the audit does not depend on it. CODEAUDIT_SKIP_YAK_SKILL=1 opts out.
-  if (process.env.CODEAUDIT_SKIP_YAK_SKILL !== '1') {
-    void ensureYakSkill(presetSkillsDir()).catch(error => {
-      const message = error instanceof Error ? error.message : String(error)
-      ctx.logger?.warn?.(`[codeaudit] yak skill auto-fetch failed (retry next mount): ${message}`)
-    })
-  }
   ctx.inject(['sessionProjections'], (projectionCtx) => {
     // The unit child activates only when a projection registry is composed
     // (headless assemblies without the seam stay unaffected). Standing fold:

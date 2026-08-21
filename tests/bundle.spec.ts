@@ -70,6 +70,8 @@ describe('dsh-codeaudit bundle', () => {
     const skillRow = composition.find(row => row.id === 'skill-filesystem') as { config?: { customSkillDirs?: string[] } }
     expect(skillRow?.config?.customSkillDirs?.[0]).toContain("new URL('skills/', baseUrl)")
     expect(existsSync(`${presetDir}skills/codeaudit-methodology/SKILL.md`)).toBe(true)
+    // The official yak skill ships in the box: no runtime network needed.
+    expect(existsSync(`${presetDir}skills/yak.md`)).toBe(true)
     const delegation = composition.find(row => row.id === 'delegation') as { config?: Array<{ id?: string; config?: { toolFilter?: { deny?: string[] } } }> }
     const subagents = delegation.config?.filter(row => row.id === 'tool-subagent' || row.id === 'tool-subagent-fork') ?? []
     expect(subagents).toHaveLength(2)

@@ -198,7 +198,7 @@ Release 产物名固定为 `dsh-codeaudit.tar.gz`，即安装命令里的 URL。
 插件随包携带一个专属技能，安装即生效（只对「代码审计模式」的会话可见，不影响其他会话）：
 
 - **codeaudit-methodology** — 审计方法论与 POC 构造规范：模块 × 漏洞类意图拆解矩阵、验证定级三步法（向上追数据流 / 查防护记 sanitizer / 再定 confirmed-suspected）、POC 纯报文与 pocNote 说明的分工示例。模型在规划意图、验证发现、写 POC 时会自动按需加载。
-- **yak**（自动补装）— Yakit 官方技能（[yaklang/yak-skills](https://github.com/yaklang/yak-skills)），Yakit POC 语法与生成参考。插件首次挂载时检测预设技能目录，没有就从官方源拉取 SKILL.md 放入预设层；离线/失败静默跳过，下次挂载自动重试。想刷新版本：删除 `<插件目录>/preset/codeaudit/skills/yak.md` 再重启即可；不想自动拉取，把环境变量 `CODEAUDIT_SKIP_YAK_SKILL` 置为 `1`。
+- **yak**（随包内置）— Yakit 官方技能（[yaklang/yak-skills](https://github.com/yaklang/yak-skills)），Yakit POC 语法与生成参考，**打包进 tarball，安装后即可用，全程无网络依赖**。更新版本：仓库里跑 `npm run skills:refresh` 重新拉取并提交。若文件被删除，审计会话开始前指挥官会征询用户同意后通过 `codeaudit_fetch_yak_skill` 在线补装（curl 兜底走代理），Web 面板头部也会显示未安装徽章与拉取按钮。
 
 加自己的技能无需改插件——dsh 的技能注册表会合并预设层与通用根目录，往任意一处放 `<name>/SKILL.md`（目录包，frontmatter 写 `description`）即可：
 
