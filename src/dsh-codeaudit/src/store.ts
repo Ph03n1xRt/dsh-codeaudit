@@ -20,6 +20,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { Domain } from '@deepseek-ai/dsh-storage-domain'
 import {
   codeauditDomainSpec,
+  missingYakImplementations,
   type CodeauditAsset,
   type CodeauditAssetType,
   type CodeauditEdge,
@@ -422,6 +423,10 @@ export class CodeauditStore {
       await this.requireRef(sessionId, 'evidences', evidenceId, 'evidence')
     }
     if (finding.affectedAssetId !== undefined) await this.requireRef(sessionId, 'assets', finding.affectedAssetId, 'asset')
+    const missingYak = missingYakImplementations(finding.poc, finding.pocScript)
+    if (missingYak.length > 0) {
+      throw new Error('codeaudit: poc references yak fuzztag function(s) ' + missingYak.join(', ') + ' without an implementation - write the hot-patch (beforeRequest/afterResponse) providing them in pocScript')
+    }
   }
 
   /** Record one intent spawned by the engagement or derived from an evidence. */

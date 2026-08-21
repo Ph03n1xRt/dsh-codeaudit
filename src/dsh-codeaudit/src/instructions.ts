@@ -65,7 +65,7 @@ export const CODEAUDIT_INSTRUCTIONS = `\
   直接可静态确定的值照常写；随机/枚举可用 fuzztag（如 int(1,100)、randstr(6) 形式，具体语法见
   webfuzzer-hotpatch 技能）；凡需动态计算的参数（加密、签名、时间戳派生、自定义编码）绝不写死值
   ——报文中用 yak(...) fuzztag 占位，并把完整热加载函数（beforeRequest/afterResponse 等）写入
-  单独的 pocScript 字段；热加载
+  单独的 pocScript 字段（写入边界强制校验：yak(...) 引用的每个函数名都必须在 pocScript 中出现，否则整条被拒）；热加载
   写法参考 webfuzzer-hotpatch 技能，加解密函数写法参考 yaklang-syntax 技能。只要能从代码与路由推导
   出完整请求（含参数生成规则），即使未实际发送也要构造 poc，并在 pocNote 注明「静态构造，未经发送
   验证」或「已动态验证」。确实无法构造出可重放请求的（如密钥硬编码、配置缺陷）才留空 poc。

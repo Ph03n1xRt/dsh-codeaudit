@@ -54,6 +54,17 @@ export function capPoc(value: string): string {
   return value.length > POC_MAX_CHARS ? value.slice(0, POC_MAX_CHARS) : value
 }
 
+/**
+ * Yak fuzztag functions referenced by a poc but not implemented in its
+ * hot-patch script. A tag like yak(riddleOf|args) references the function
+ * named before the pipe; every referenced name must appear in pocScript or
+ * the write is rejected — a raw full of unimplemented tags is not replayable.
+ */
+export function missingYakImplementations(poc: string, pocScript: string): string[] {
+  const referenced = [...poc.matchAll(/yak\(\s*([A-Za-z_][\w]*)/g)].map(match => match[1])
+  return [...new Set(referenced)].filter(name => !pocScript.includes(name))
+}
+
 /** Non-empty id. */
 const id = z.string().min(1)
 

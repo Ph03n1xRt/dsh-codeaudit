@@ -252,6 +252,27 @@ describe('codeaudit_submit', () => {
     expect(state.evidences).toEqual([expect.objectContaining({ id: 'evidence-1', detail: 'second attempt' })])
   })
 
+  it('rejects yak fuzztag references without a pocScript implementation', async () => {
+    const { call, callAsChild } = await codeauditHarness()
+    await call('codeaudit_set_engagement', { target: 'shop-backend', objective: 'o' }, SESSION_ID)
+    const intent = await call('codeaudit_add_intent', { engagementId: 'engagement-1', title: 'trace' }, SESSION_ID) as { id: string }
+    const raw = 'GET /auth/authentication.do?riddle={{yak(riddleOf|1700000000000)}} HTTP/1.1\nHost: <target>'
+    await expect(callAsChild('codeaudit_submit', {
+      intentId: intent.id,
+      evidences: [{ detail: 'sink' }],
+      assets: [],
+      findings: [{ title: 'auth bypass', severity: 'high', status: 'suspected', location: 'a:1', evidenceIds: ['evidence-1'], poc: raw }],
+    }, SESSION_ID)).rejects.toThrow(/riddleOf.*pocScript/)
+    // Providing the implementation in pocScript unlocks the write.
+    await expect(callAsChild('codeaudit_submit', {
+      intentId: intent.id,
+      evidences: [{ detail: 'sink' }],
+      assets: [],
+      findings: [{ title: 'auth bypass', severity: 'high', status: 'suspected', location: 'a:1', evidenceIds: ['evidence-1'], poc: raw,
+        pocScript: 'beforeRequest = func(req) { return riddleOf(req) }\nriddleOf = func(req) { return req }' }],
+    }, SESSION_ID)).resolves.toMatchObject({ findings: 1 })
+  })
+
   it('returns the ids assigned to the batch so the caller never guesses', async () => {
     const { call, callAsChild } = await codeauditHarness()
     await call('codeaudit_set_engagement', { target: 'shop-backend', objective: 'o' }, SESSION_ID)

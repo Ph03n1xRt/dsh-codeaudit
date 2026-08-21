@@ -12,7 +12,7 @@
 
 import { z } from 'zod'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
-import { capPoc, capSnippet } from './spec.ts'
+import { capPoc, capSnippet, missingYakImplementations } from './spec.ts'
 import type {
   CodeauditAssetType,
   CodeauditEdgeKind,
@@ -330,6 +330,11 @@ export function applyCodeauditEvent(state: CodeauditFoldState, event: SessionEve
       if (!evidenceIds.every(evidenceId => findNode(state, evidenceId, 'evidence') !== undefined)) return state
       const affectedAssetId = str(args.affectedAssetId)
       if (affectedAssetId !== '' && !state.assets.some(asset => asset.id === affectedAssetId)) return state
+      // Mirror the store's hot-patch rule: yak(...) tags without a pocScript
+      // implementation are not replayable and never fold.
+      const poc = capPoc(str(args.poc))
+      const pocScript = capPoc(str(args.pocScript))
+      if (missingYakImplementations(poc, pocScript).length > 0) return state
       const { id, counters } = nextNodeId(state, 'finding')
       const node: CodeauditProjectionNode & { kind: 'finding' } = {
         id,
@@ -344,7 +349,7 @@ export function applyCodeauditEvent(state: CodeauditFoldState, event: SessionEve
         snippet: capSnippet(str(args.snippet)),
         poc: capPoc(str(args.poc)),
         pocNote: capSnippet(str(args.pocNote)),
-        pocScript: capPoc(str(args.pocScript)),
+        pocScript,
         fix: str(args.fix),
         evidenceIds,
         affectedAssetId: affectedAssetId === '' ? undefined : affectedAssetId,
