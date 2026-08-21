@@ -65,6 +65,11 @@ describe('dsh-codeaudit bundle', () => {
     const patchText = readFileSync(PATCH_PATH, 'utf8')
     expect(patchText).not.toContain('dsh-codeaudit/codeaudit\n')
     // Both subagent rows deny every write/read tool except codeaudit_submit.
+    // The preset ships its own skills/ directory and mounts it through its
+    // skill-filesystem row (customSkillDirs), landing in this preset's layer.
+    const skillRow = composition.find(row => row.id === 'skill-filesystem') as { config?: { customSkillDirs?: string[] } }
+    expect(skillRow?.config?.customSkillDirs?.[0]).toContain("new URL('skills/', baseUrl)")
+    expect(existsSync(`${presetDir}skills/codeaudit-methodology/SKILL.md`)).toBe(true)
     const delegation = composition.find(row => row.id === 'delegation') as { config?: Array<{ id?: string; config?: { toolFilter?: { deny?: string[] } } }> }
     const subagents = delegation.config?.filter(row => row.id === 'tool-subagent' || row.id === 'tool-subagent-fork') ?? []
     expect(subagents).toHaveLength(2)

@@ -191,6 +191,27 @@ Release 产物名固定为 `dsh-codeaudit.tar.gz`，即安装命令里的 URL。
 - 会话投影是最近 200 节点的窗口视图；完整记录以 `codeaudit_state` / `codeaudit_graph` / 报告为准。
 - 一次会话一个 engagement；重置语义见上文。
 
+## 内置技能（skill）与自定义扩展
+
+插件随包携带一个专属技能，安装即生效（只对「代码审计模式」的会话可见，不影响其他会话）：
+
+- **codeaudit-methodology** — 审计方法论与 POC 构造规范：模块 × 漏洞类意图拆解矩阵、验证定级三步法（向上追数据流 / 查防护记 sanitizer / 再定 confirmed-suspected）、POC 纯报文与 pocNote 说明的分工示例。模型在规划意图、验证发现、写 POC 时会自动按需加载。
+
+加自己的技能无需改插件——dsh 的技能注册表会合并预设层与通用根目录，往任意一处放 `<name>/SKILL.md`（目录包，frontmatter 写 `description`）即可：
+
+```bash
+mkdir -p ~/.dsh/skills/my-framework-checklist
+cat > ~/.dsh/skills/my-framework-checklist/SKILL.md << 'EOF'
+---
+name: my-framework-checklist
+description: 某框架的安全审计 checklist（何时用、查什么）
+---
+（正文：逐项检查点……）
+EOF
+```
+
+项目级技能放被审仓库的 `.dsh/skills/` 或 `.agents/skills/`（优先级高于用户级）。技能是 Markdown 指令，模型经 `skill` 工具按目录自动发现、按需加载，改动即时热更新。
+
 ## 致谢
 
 架构大量参考了 [dsh-pentest](https://github.com/howmp/dsh-pentest)（同为 DSH 插件形式的成熟实践），

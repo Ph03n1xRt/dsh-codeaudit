@@ -87,6 +87,12 @@
 # carries whatever the deployment registered globally (repository plugins).
 - id: skill-filesystem
   name: '@deepseek-ai/dsh-skill-filesystem'
+  # This preset's OWN skills/ directory ships with the package (baseUrl is
+  # the preset's own directory, resolving wherever the preset is installed);
+  # the user's own roots (~/.dsh/skills, project .dsh/skills, …) keep working.
+  config:
+    customSkillDirs:
+      - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('skills/', baseUrl))"
 
 - id: tool-skill
   name: '@deepseek-ai/dsh-tool-skill'
