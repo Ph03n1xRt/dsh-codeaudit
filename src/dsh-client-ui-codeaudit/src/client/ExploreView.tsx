@@ -278,7 +278,7 @@ export function ExploreView({ codeaudit, t }: ExploreViewProps) {
             { label: '类型', value: t(KIND_LABELS[selectedNode.kind]) },
             { label: '说明', value: selectedNode.detail },
             ...(selectedNode.location === '' ? [] : [{ label: '代码位置', value: selectedNode.location, mono: true }]),
-            ...(selectedNode.snippet === '' ? [] : [{ label: '代码片段', value: selectedNode.snippet, mono: true }]),
+            ...(selectedNode.snippet === '' ? [] : [{ label: '代码片段', value: selectedNode.snippet, code: true }]),
             ...(selectedNode.severity === undefined ? [] : [{ label: '风险等级', value: t(SEVERITY_LABELS[selectedNode.severity]) }]),
             ...(selectedNode.status === undefined ? [] : [{ label: '状态', value: t(selectedNode.status === 'confirmed' ? 'status.confirmed' : 'status.suspected') }]),
           ]}

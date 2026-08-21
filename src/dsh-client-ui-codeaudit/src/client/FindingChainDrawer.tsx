@@ -14,6 +14,7 @@ import type {
   CodeauditProjectionNode,
 } from '../../../dsh-codeaudit/src/client.ts'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
+import { CodeBlock } from './CodeBlock.tsx'
 import type { CodeauditKey } from './locales.ts'
 import css from './FindingChainDrawer.module.css'
 
@@ -77,7 +78,7 @@ function EvidenceCard({
         {evidence.location !== '' && <code className={css.evidenceLocation}>{evidence.location}</code>}
       </header>
       <p className={css.evidenceDetail}>{evidence.detail}</p>
-      {evidence.snippet !== '' && <pre className={css.snippet} data-testid="chain-evidence-snippet">{evidence.snippet}</pre>}
+      {evidence.snippet !== '' && <CodeBlock code={evidence.snippet} testId="chain-evidence-snippet" />}
     </div>
   )
 }
@@ -165,7 +166,7 @@ export function FindingChainDrawer({ finding, codeaudit, t, onClose }: FindingCh
                   </div>
                 )}
               </dl>
-              {finding.snippet !== '' && <pre className={css.snippet} data-testid="chain-finding-snippet">{finding.snippet}</pre>}
+              {finding.snippet !== '' && <CodeBlock code={finding.snippet} testId="chain-finding-snippet" />}
             </div>
           </Step>
         </ol>

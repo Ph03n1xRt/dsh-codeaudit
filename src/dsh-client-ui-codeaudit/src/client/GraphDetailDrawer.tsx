@@ -1,12 +1,15 @@
 import { useEffect } from 'react'
+import { CodeBlock } from './CodeBlock.tsx'
 import css from './GraphDetailDrawer.module.css'
 
-/** One labeled detail field; `mono` renders the value as a code block. */
+/** One labeled detail field; `mono` renders plain monospace, `code` highlights it. */
 export interface GraphDetailField {
   readonly label: string
   readonly value: string
-  /** Render in a monospace block (code positions, snippets). */
+  /** Render in a plain monospace block (positions, asset values). */
   readonly mono?: boolean
+  /** Render syntax-highlighted (code snippets). */
+  readonly code?: boolean
 }
 
 export interface GraphDetailDrawerProps {
@@ -37,9 +40,11 @@ export function GraphDetailDrawer({ title, fields, onClose }: GraphDetailDrawerP
           {fields.filter(field => field.value !== '').map(field => (
             <div key={field.label} className={css.field}>
               <dt>{field.label}</dt>
-              {field.mono === true
-                ? <dd><pre className={css.code}>{field.value}</pre></dd>
-                : <dd>{field.value}</dd>}
+              {field.code === true
+                ? <dd><CodeBlock code={field.value} /></dd>
+                : field.mono === true
+                  ? <dd><pre className={css.code}>{field.value}</pre></dd>
+                  : <dd>{field.value}</dd>}
             </div>
           ))}
         </dl>

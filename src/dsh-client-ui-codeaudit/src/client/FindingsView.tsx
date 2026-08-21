@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react'
 import type { CodeauditProjection, CodeauditProjectionNode, CodeauditSeverity } from '../../../dsh-codeaudit/src/client.ts'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
+import { CodeBlock } from './CodeBlock.tsx'
 import { FindingChainDrawer } from './FindingChainDrawer.tsx'
 import type { CodeauditKey } from './locales.ts'
 import css from './FindingsView.module.css'
@@ -79,7 +80,7 @@ function PocDrawer({
               </button>
             </div>
             {copyState === 'failed' && <p className={css.pocError} role="status">{t('finding.pocCopyFailed')}</p>}
-            <pre className={css.pocRaw} data-testid="finding-poc-raw">{finding.poc}</pre>
+            <CodeBlock code={finding.poc} language="http" testId="finding-poc-raw" />
           </>
         )}
       </aside>
@@ -142,7 +143,7 @@ export function FindingsView({ codeaudit, t }: FindingsViewProps) {
                 {asset !== undefined && <span className={css.asset}>{t('finding.affected')}: [{asset.type}] {asset.value}</span>}
               </div>
               {finding.fix !== '' && <p className={css.fix}>{t('report.fix')}: {finding.fix}</p>}
-              {finding.snippet !== '' && <pre className={css.snippet} data-testid="codeaudit-finding-snippet">{finding.snippet}</pre>}
+              {finding.snippet !== '' && <CodeBlock code={finding.snippet} testId="codeaudit-finding-snippet" />}
               <div className={css.actions}>
                 <button
                   type="button"

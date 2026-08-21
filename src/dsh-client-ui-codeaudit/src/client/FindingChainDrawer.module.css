@@ -187,18 +187,6 @@
   word-break: break-word;
 }
 
-.snippet {
-  margin: 0;
-  padding: 10px 12px;
-  font-family: var(--dsh-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
-  font-size: 11.5px;
-  line-height: 1.55;
-  overflow-x: auto;
-  white-space: pre;
-  background: #0f172a;
-  color: #e2e8f0;
-  border-radius: 8px;
-}
 
 .findingCard {
   display: grid;

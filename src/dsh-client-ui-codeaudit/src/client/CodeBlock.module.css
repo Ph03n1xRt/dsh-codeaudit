@@ -1,0 +1,18 @@
+.block {
+  margin: 0;
+  padding: 10px 12px;
+  font-family: var(--dsh-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 11.5px;
+  line-height: 1.6;
+  overflow: auto;
+  white-space: pre;
+  background: var(--dsh-color-bg-subtle, #f6f8fa);
+  border: 1px solid var(--dsh-color-border, #e2e8f0);
+  border-radius: 8px;
+}
+
+/* The github theme paints its own panel; blend into the card surface. */
+.block :global(.hljs) {
+  background: transparent;
+  padding: 0;
+}
