@@ -99,6 +99,7 @@ export interface FindingInput {
   readonly location: string
   readonly snippet: string
   readonly poc: string
+  readonly pocNote: string
   readonly fix: string
   /** The evidence chain backing the finding (min one; supports edges). */
   readonly evidenceIds: readonly string[]
@@ -361,6 +362,7 @@ export class CodeauditStore {
       location: input.location,
       snippet: input.snippet,
       poc: input.poc,
+      pocNote: input.pocNote,
       fix: input.fix,
       ...(input.affectedAssetId !== undefined ? { affectedAssetId: input.affectedAssetId } : {}),
     })

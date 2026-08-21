@@ -47,7 +47,7 @@ const STANDING: CodeauditProjection = {
     { id: 'intent-1', kind: 'intent', title: 'trace /api/order params', detail: 'source → sink' },
     { id: 'evidence-1', kind: 'evidence', evidenceKind: 'entry', intentId: 'intent-1', location: 'src/OrderController.java:42', detail: 'q reaches DAO unencoded', snippet: 'public List<Order> find(@RequestParam String q) {', confidence: 0.9 },
     { id: 'evidence-2', kind: 'evidence', evidenceKind: 'sink', intentId: 'intent-1', location: 'src/OrderDao.java:87', detail: 'query built by string concatenation', snippet: 'return jdbc.query("... where name = \'" + q + "\'");', confidence: 0.9 },
-    { id: 'finding-1', kind: 'finding', intentId: 'intent-1', title: 'SQL injection in OrderDao.findByUser', severity: 'high', status: 'confirmed', cwe: 'CWE-89', description: 'Injectable parameter', location: 'src/OrderDao.java:87', snippet: 'return jdbc.query("..." + q);', poc: 'POST /api/order HTTP/1.1\nHost: shop.example.com\nContent-Type: application/x-www-form-urlencoded\n\nq=1%27+OR+%271%27%3D%271', fix: 'Use a parameterized query', evidenceIds: ['evidence-1', 'evidence-2'], affectedAssetId: undefined },
+    { id: 'finding-1', kind: 'finding', intentId: 'intent-1', title: 'SQL injection in OrderDao.findByUser', severity: 'high', status: 'confirmed', cwe: 'CWE-89', description: 'Injectable parameter', location: 'src/OrderDao.java:87', snippet: 'return jdbc.query("..." + q);', poc: 'POST /api/order HTTP/1.1\nHost: shop.example.com\nContent-Type: application/x-www-form-urlencoded\n\nq=1%27+OR+%271%27%3D%271', pocNote: 'q 为注入点占位符。', fix: 'Use a parameterized query', evidenceIds: ['evidence-1', 'evidence-2'], affectedAssetId: undefined },
   ],
   assets: [
     { id: 'asset-1', type: 'repo', value: 'shop-backend', meta: '' },
@@ -142,7 +142,7 @@ describe('FindingsView', () => {
       ...STANDING,
       nodes: [
         ...STANDING.nodes,
-        { id: 'finding-2', kind: 'finding', intentId: 'intent-1', title: 'verbose error leakage', severity: 'medium', status: 'suspected', cwe: 'CWE-209', description: '', location: 'src/Err.java:9', snippet: '', poc: '', fix: '', evidenceIds: ['evidence-1'], affectedAssetId: undefined },
+        { id: 'finding-2', kind: 'finding', intentId: 'intent-1', title: 'verbose error leakage', severity: 'medium', status: 'suspected', cwe: 'CWE-209', description: '', location: 'src/Err.java:9', snippet: '', poc: '', pocNote: '', fix: '', evidenceIds: ['evidence-1'], affectedAssetId: undefined },
       ],
       counts: { intents: 1, evidences: 2, findings: 2, assets: 1 },
     }
@@ -214,7 +214,7 @@ describe('ExploreView collapse', () => {
       nodes: [
         { id: 'intent-1', kind: 'intent', title: 'trace everything', detail: '' },
         ...evidences,
-        { id: 'finding-1', kind: 'finding', intentId: 'intent-1', title: 'sqli', severity: 'high', status: 'confirmed', cwe: '', description: '', location: 'a:1', snippet: '', poc: '', fix: '', evidenceIds: ['evidence-1'], affectedAssetId: undefined },
+        { id: 'finding-1', kind: 'finding', intentId: 'intent-1', title: 'sqli', severity: 'high', status: 'confirmed', cwe: '', description: '', location: 'a:1', snippet: '', poc: '', pocNote: '', fix: '', evidenceIds: ['evidence-1'], affectedAssetId: undefined },
       ],
       assets: [],
       edges,

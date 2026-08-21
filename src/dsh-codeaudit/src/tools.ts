@@ -68,6 +68,11 @@ function pocValue(value: unknown): string {
   return capPoc(optionalString(value))
 }
 
+/** Normalize one POC note: optional string, capped at the snippet limit. */
+function pocNoteValue(value: unknown): string {
+  return capSnippet(optionalString(value))
+}
+
 function submissionList(value: unknown, name: string): Record<string, unknown>[] {
   if (!Array.isArray(value) || !value.every(item => item !== null && typeof item === 'object' && !Array.isArray(item))) {
     throw new Error(`codeaudit_submit requires ${name} to be an array of objects`)
@@ -219,6 +224,7 @@ function buildReport(state: CodeauditStateView): string {
       `- 影响资产: ${asset === undefined ? '（未关联）' : `[${asset.type}] ${asset.value}`}`,
       `- 修复建议: ${finding.fix === '' ? '（无）' : finding.fix}`,
       ...(finding.poc === '' ? [] : ['- POC (HTTP raw，可直接粘贴 Yakit/Burp 重放):', ...finding.poc.split('\n').map(line => `  ${line}`)]),
+      ...(finding.pocNote === '' ? [] : [`- POC 说明: ${finding.pocNote}`]),
       '- 证据链:',
       ...evidenceChainOf(finding.id).map((evidenceId, index) => `  ${index + 1}. ${evidenceOf(evidenceId)}`),
     ].join('\n')
@@ -286,7 +292,8 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
         description: { type: 'string', description: 'Impact or root-cause description; for suspected findings, state what remains unverified.' },
         fix: { type: 'string', description: 'Fix suggestion.' },
         snippet: { type: 'string', description: 'The vulnerable code excerpt (capped).' },
-        poc: { type: 'string', description: 'Replayable verification POC: the COMPLETE HTTP raw (request line, headers, body) that reproduces the issue — pasteable straight into Yakit/Burp. Omit for static-only findings.' },
+        poc: { type: 'string', description: 'Replayable verification POC: the COMPLETE HTTP raw (request line, headers, body) that reproduces the issue — pasteable straight into Yakit/Burp. NOTHING else: no annotations, no explanations. Omit for static-only findings.' },
+        pocNote: { type: 'string', description: 'Optional note ABOUT the POC: parameter derivation rules, placeholder meanings, preconditions. Never put this inside poc.' },
         evidenceIds: { type: 'array', required: true, description: 'The evidence chain backing this finding (min one; ids from this batch or earlier submissions).', items: { type: 'string' } },
         affectedAssetId: { type: 'string', description: 'Existing affected parent-session asset id, when known.' },
       } } },
@@ -339,6 +346,7 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
           location: requiredString(finding.location, 'finding.location'),
           snippet: snippetValue(finding.snippet),
           poc: pocValue(finding.poc),
+          pocNote: pocNoteValue(finding.pocNote),
           fix: optionalString(finding.fix),
           evidenceIds: stringList(finding.evidenceIds, 'finding.evidenceIds'),
           ...(typeof finding.affectedAssetId === 'string' ? { affectedAssetId: finding.affectedAssetId } : {}),
@@ -469,7 +477,8 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
       description: { type: 'string', description: 'Impact / root-cause description; for suspected findings, state what remains unverified.' },
       fix: { type: 'string', description: 'Optional fix suggestion.' },
       snippet: { type: 'string', description: 'Optional vulnerable code excerpt (capped).' },
-      poc: { type: 'string', description: 'Optional replayable verification POC: the COMPLETE HTTP raw (request line, headers, body) that reproduces the issue — pasteable straight into Yakit/Burp. Record it when dynamic verification was performed.' },
+      poc: { type: 'string', description: 'Optional replayable verification POC: the COMPLETE HTTP raw (request line, headers, body) that reproduces the issue — pasteable straight into Yakit/Burp, with NOTHING else in it. Record it when dynamic verification was performed.' },
+      pocNote: { type: 'string', description: 'Optional note ABOUT the POC: parameter derivation rules, placeholder meanings, preconditions — this is the place for annotations, never inside poc.' },
       affectedAssetId: { type: 'string', description: 'Optional asset id this finding affects.' },
     },
     output: {
@@ -493,6 +502,7 @@ export function registerCodeauditTools(ctx: Context, store: CodeauditStore): voi
         location: args.location,
         snippet: snippetValue(args.snippet),
         poc: pocValue(args.poc),
+        pocNote: pocNoteValue(args.pocNote),
         fix: args.fix ?? '',
         evidenceIds: args.evidenceIds,
         ...(args.affectedAssetId !== undefined ? { affectedAssetId: args.affectedAssetId } : {}),

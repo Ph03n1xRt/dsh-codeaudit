@@ -209,8 +209,8 @@
           分配的真实 ID（evidenceIds/assetIds/findingIds）。finding 仅限有证据支撑的问题，必须含
           title/severity/location/status，evidenceIds 只能引用本次提交返回的 ID、既往提交返回的 ID 或委派中
           提供的既有 ID，绝不臆测编号；尚未拿到证据 ID 时分两批：先提交证据，再用返回的 ID 提交 finding。
-          做过动态验证时把可复现的完整 HTTP raw（请求行+头+体，可直粘 Yakit/Burp 重放）写入 finding 的 poc
-          字段。status=confirmed 需已排查 sanitizer/框架防护，否则用 suspected。asset 的 parentId、finding 的
+          做过动态验证时把可复现的完整 HTTP raw（请求行+头+体）写入 finding 的 poc 字段——必须是纯报文，
+          绝不夹注释；参数生成规则、占位符含义等说明一律写入单独的 pocNote 字段。status=confirmed 需已排查 sanitizer/框架防护，否则用 suspected。asset 的 parentId、finding 的
           affectedAssetId 只能引用委派中提供的或既往提交返回的既有资产。没有对应结果时传空数组，绝不重复
           提交同一条数据。
 
@@ -250,8 +250,8 @@
           分配的真实 ID（evidenceIds/assetIds/findingIds）。finding 仅限有证据支撑的问题，必须含
           title/severity/location/status，evidenceIds 只能引用本次提交返回的 ID、既往提交返回的 ID 或委派中
           提供的既有 ID，绝不臆测编号；尚未拿到证据 ID 时分两批：先提交证据，再用返回的 ID 提交 finding。
-          做过动态验证时把可复现的完整 HTTP raw（请求行+头+体，可直粘 Yakit/Burp 重放）写入 finding 的 poc
-          字段。status=confirmed 需已排查 sanitizer/框架防护，否则用 suspected。asset 的 parentId、finding 的
+          做过动态验证时把可复现的完整 HTTP raw（请求行+头+体）写入 finding 的 poc 字段——必须是纯报文，
+          绝不夹注释；参数生成规则、占位符含义等说明一律写入单独的 pocNote 字段。status=confirmed 需已排查 sanitizer/框架防护，否则用 suspected。asset 的 parentId、finding 的
           affectedAssetId 只能引用委派中提供的或既往提交返回的既有资产。没有对应结果时传空数组，绝不重复
           提交同一条数据。
 

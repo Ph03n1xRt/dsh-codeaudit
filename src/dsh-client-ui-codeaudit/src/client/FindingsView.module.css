@@ -308,3 +308,27 @@
   font-size: 11.5px;
   opacity: 0.6;
 }
+
+.pocNoteCard {
+  display: grid;
+  gap: 4px;
+  margin: 10px 16px 0;
+  padding: 10px 14px;
+  border: 1px dashed var(--dsh-color-border, #cbd5e1);
+  border-radius: 10px;
+  background: var(--dsh-color-bg, #f8fafc);
+}
+
+.pocNoteLabel {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.65;
+}
+
+.pocNoteText {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-word;
+  white-space: pre-wrap;
+}

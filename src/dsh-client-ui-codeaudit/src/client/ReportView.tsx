@@ -53,6 +53,7 @@ function reportOf(codeaudit: CodeauditProjection, t: ReportViewProps['t']): stri
       `- ${t('finding.affected')}: ${asset === undefined ? t('report.unlinked') : `[${asset.type}] ${asset.value}`}`,
       `- ${t('report.fix')}: ${finding.fix === '' ? t('report.none') : finding.fix}`,
       ...(finding.poc === '' ? [] : [`- ${t('finding.poc')} (HTTP raw):`, ...finding.poc.split('\n').map(line => `  ${line}`)]),
+      ...(finding.pocNote === '' ? [] : [`- ${t('finding.pocNoteLabel')}: ${finding.pocNote}`]),
       `- ${t('report.evidence')}:`,
       ...finding.evidenceIds.map((evidenceId, index) => `  ${index + 1}. ${evidenceOf(evidenceId)}`),
       '',

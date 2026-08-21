@@ -46,6 +46,7 @@ async function fullChain(
     location: 'src/OrderDao.java:87', cwe: 'CWE-89', evidenceIds: [sink.id],
     description: 'User input concatenated into SQL', fix: 'Use a parameterized query',
     poc: 'POST /api/order HTTP/1.1\nHost: shop.example.com\n\nq=1%27',
+    pocNote: '占位符 q 为注入点。',
   }, SESSION_ID) as Record<string, unknown>
   return { engagement, intentA, entry, intentB, sink, finding }
 }
@@ -591,6 +592,7 @@ describe('codeaudit_graph and codeaudit_report', () => {
     expect(markdown).toContain('1. evidence-2 [sink] src/OrderDao.java:87 query built by string concatenation')
     expect(markdown).toContain('- POC (HTTP raw，可直接粘贴 Yakit/Burp 重放):')
     expect(markdown).toContain('  POST /api/order HTTP/1.1')
+    expect(markdown).toContain('- POC 说明: 占位符 q 为注入点。')
     expect(markdown).toContain('- 影响资产: （未关联）')
     expect(markdown).toContain('- [repo] shop-backend（main branch）')
     expect(markdown).toContain('- [endpoint] GET /api/order ← shop-backend')

@@ -20,7 +20,7 @@ function chainProjection(): CodeauditProjection {
       { id: 'evidence-1', kind: 'evidence', evidenceKind: 'entry', intentId: 'intent-1', location: 'src/OrderController.java:42', detail: 'q reaches DAO', snippet: 'find(@RequestParam String q)', confidence: 0.9 },
       { id: 'intent-2', kind: 'intent', title: 'trace OrderDao', detail: '' },
       { id: 'evidence-2', kind: 'evidence', evidenceKind: 'sink', intentId: 'intent-2', location: 'src/OrderDao.java:87', detail: 'concatenation', snippet: '', confidence: 0.5 },
-      { id: 'finding-1', kind: 'finding', intentId: 'intent-2', title: 'sqli', severity: 'high', status: 'confirmed', cwe: 'CWE-89', description: 'injectable', location: 'src/OrderDao.java:87', snippet: '', poc: '', fix: '', evidenceIds: ['evidence-2'], affectedAssetId: undefined },
+      { id: 'finding-1', kind: 'finding', intentId: 'intent-2', title: 'sqli', severity: 'high', status: 'confirmed', cwe: 'CWE-89', description: 'injectable', location: 'src/OrderDao.java:87', snippet: '', poc: '', pocNote: '', fix: '', evidenceIds: ['evidence-2'], affectedAssetId: undefined },
     ],
     assets: [
       { id: 'asset-1', type: 'repo', value: 'shop-backend', meta: '' },
@@ -154,7 +154,7 @@ describe('layoutExploration', () => {
       ...chainProjection(),
       nodes: [
         ...chainProjection().nodes,
-        { id: 'finding-9', kind: 'finding', intentId: 'intent-9', title: 'orphan', severity: 'low', status: 'suspected', cwe: '', description: '', location: 'a:1', snippet: '', poc: '', fix: '', evidenceIds: ['evidence-9'], affectedAssetId: undefined },
+        { id: 'finding-9', kind: 'finding', intentId: 'intent-9', title: 'orphan', severity: 'low', status: 'suspected', cwe: '', description: '', location: 'a:1', snippet: '', poc: '', pocNote: '', fix: '', evidenceIds: ['evidence-9'], affectedAssetId: undefined },
       ],
     }
     const { nodes } = layoutExploration(buildExploreModel(projection, allExpanded(projection)))

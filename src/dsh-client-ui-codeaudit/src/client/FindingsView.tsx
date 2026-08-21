@@ -79,6 +79,12 @@ function PocDrawer({
               <p className={css.pocMetaLine}>{t('report.location')}: <code>{finding.location}</code></p>
               {finding.cwe !== '' && <p className={css.pocMetaLine}>{t('report.cwe')}: {finding.cwe}</p>}
             </section>
+            {finding.pocNote !== '' && (
+              <section className={css.pocNoteCard} data-testid="finding-poc-note">
+                <span className={css.pocNoteLabel}>{t('finding.pocNoteLabel')}</span>
+                <p className={css.pocNoteText}>{finding.pocNote}</p>
+              </section>
+            )}
             <div className={css.pocActions}>
               <button type="button" className={css.pocAction} data-state={copyState === 'done' ? 'done' : undefined} data-testid="finding-poc-copy" onClick={() => { void copy() }}>
                 {t(copyState === 'done' ? 'finding.pocCopied' : 'finding.pocCopy')}

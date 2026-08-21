@@ -118,6 +118,11 @@ export const codeauditFindingSchema = z.object({
    * Capped at POC_MAX_CHARS; empty when the audit was static-only.
    */
   poc: z.string().default(''),
+  /**
+   * Human note ABOUT the POC (parameter derivation rules, placeholder
+   * meanings, preconditions) — never part of the raw itself.
+   */
+  pocNote: z.string().default(''),
   /** Fix suggestion. */
   fix: z.string().default(''),
   /** Optional asset the finding affects. */

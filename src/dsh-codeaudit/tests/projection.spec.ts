@@ -77,7 +77,7 @@ describe('applyCodeauditEvent', () => {
       { id: 'evidence-1', kind: 'evidence', evidenceKind: 'entry', intentId: 'intent-1', location: 'src/OrderController.java:42', detail: 'q reaches DAO', snippet: 'find(@RequestParam String q)', confidence: 0.9 },
       { id: 'intent-2', kind: 'intent', title: 'trace OrderDao sink', detail: '' },
       { id: 'evidence-2', kind: 'evidence', evidenceKind: 'sink', intentId: 'intent-2', location: 'src/OrderDao.java:87', detail: 'string concatenation', snippet: 'jdbc.query("..." + q)', confidence: 0.5 },
-      { id: 'finding-1', kind: 'finding', intentId: 'intent-2', title: 'sqli', severity: 'high', status: 'confirmed', cwe: 'CWE-89', description: 'injectable', location: 'src/OrderDao.java:87', snippet: '', poc: '', fix: 'parameterize', evidenceIds: ['evidence-2'], affectedAssetId: undefined },
+      { id: 'finding-1', kind: 'finding', intentId: 'intent-2', title: 'sqli', severity: 'high', status: 'confirmed', cwe: 'CWE-89', description: 'injectable', location: 'src/OrderDao.java:87', snippet: '', poc: '', pocNote: '', fix: 'parameterize', evidenceIds: ['evidence-2'], affectedAssetId: undefined },
     ])
     expect(state.edges).toEqual([
       { id: 'edge-1', kind: 'spawns', sourceId: 'engagement-1', targetId: 'intent-1' },
