@@ -24,34 +24,49 @@
   padding: 0;
 }
 
+/* Actions live INSIDE the panel as quiet ghost chips, tucked into the
+ * top-right corner: no border, near-invisible until hover, so the code
+ * surface stays one visual object instead of code + bolted-on buttons. */
 .actions {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 0;
+  right: 0;
   z-index: 1;
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  padding: 4px 6px;
+  border-radius: 0 8px 0 8px;
+  background: linear-gradient(215deg, rgba(13, 17, 23, 0.92) 0%, rgba(13, 17, 23, 0.55) 70%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.wrap:hover .actions,
+.actions:focus-within {
+  opacity: 1;
 }
 
 .action {
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(13, 17, 23, 0.85);
-  color: #cbd5e1;
-  border-radius: 6px;
-  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: #7d8590;
+  border-radius: 5px;
+  padding: 2px 7px;
   font-size: 10.5px;
+  line-height: 1.4;
   cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
 .action:hover {
-  border-color: rgba(203, 213, 225, 0.7);
-  color: #f1f5f9;
+  color: #e6edf3;
+  background: rgba(110, 118, 129, 0.25);
 }
 
 .action[data-state='done'] {
-  color: #4ade80;
+  color: #3fb950;
 }
 
 .action[data-state='failed'] {
-  color: #f87171;
+  color: #f85149;
 }
