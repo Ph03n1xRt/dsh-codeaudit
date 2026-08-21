@@ -45,9 +45,9 @@ async function fullChain(
     intentId: intentB.id, title: 'SQL injection in OrderDao.findByUser', severity: 'high', status: 'confirmed',
     location: 'src/OrderDao.java:87', cwe: 'CWE-89', evidenceIds: [sink.id],
     description: 'User input concatenated into SQL', fix: 'Use a parameterized query',
-    poc: 'POST /api/order HTTP/1.1\nHost: shop.example.com\n\nq=1%27',
+    poc: 'POST /api/order HTTP/1.1\nHost: shop.example.com\n\nq={{yak(payloadOf|1%27)}}',
     pocNote: '占位符 q 为注入点。',
-    pocScript: 'beforeRequest = func(req) {\n    return req\n}',
+    pocScript: 'beforeRequest = func(req) {\n    return payloadOf(req)\n}\npayloadOf = func(req) {\n    return req\n}',
   }, SESSION_ID) as Record<string, unknown>
   return { engagement, intentA, entry, intentB, sink, finding }
 }

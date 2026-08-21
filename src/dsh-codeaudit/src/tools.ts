@@ -14,7 +14,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { ToolResult, ToolResultView } from '@deepseek-ai/dsh-tools'
-import { capPoc, capSnippet } from './spec.ts'
+import { capPoc, capSnippet, hasYakReferences } from './spec.ts'
 import { ensureYakSkill, presetSkillsDir } from './yakSkill.ts'
 import type {
   AssetInput,
@@ -231,7 +231,7 @@ function buildReport(state: CodeauditStateView): string {
       `- 修复建议: ${finding.fix === '' ? '（无）' : finding.fix}`,
       ...(finding.poc === '' ? [] : ['- POC (HTTP raw，可直接粘贴 Yakit/Burp 重放):', ...finding.poc.split('\n').map(line => `  ${line}`)]),
       ...(finding.pocNote === '' ? [] : [`- POC 说明: ${finding.pocNote}`]),
-      ...(finding.pocScript === '' ? [] : ['- POC 热加载脚本 (yak):', ...finding.pocScript.split('\n').map(line => `  ${line}`)]),
+      ...(!hasYakReferences(finding.poc) || finding.pocScript === '' ? [] : ['- POC 热加载脚本 (yak):', ...finding.pocScript.split('\n').map(line => `  ${line}`)]),
       '- 证据链:',
       ...evidenceChainOf(finding.id).map((evidenceId, index) => `  ${index + 1}. ${evidenceOf(evidenceId)}`),
     ].join('\n')

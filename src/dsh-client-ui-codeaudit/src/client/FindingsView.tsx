@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react'
 import type { CodeauditProjection, CodeauditProjectionNode, CodeauditSeverity } from '../../../dsh-codeaudit/src/client.ts'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import { CodeBlock } from './CodeBlock.tsx'
+import { usesYakHotpatch } from './poc.ts'
 import { FindingChainDrawer } from './FindingChainDrawer.tsx'
 import type { CodeauditKey } from './locales.ts'
 import css from './FindingsView.module.css'
@@ -95,7 +96,7 @@ function PocDrawer({
             </div>
             {copyState === 'failed' && <p className={css.pocError} role="status">{t('finding.pocCopyFailed')}</p>}
             <CodeBlock code={finding.poc ?? ''} language="http" testId="finding-poc-raw" />
-            {(finding.pocScript ?? '') !== '' && (
+            {usesYakHotpatch(finding.poc ?? '') && (finding.pocScript ?? '') !== '' && (
               <section className={css.pocScriptBlock} data-testid="finding-poc-script">
                 <span className={css.pocScriptLabel}>{t('finding.pocScriptLabel')}</span>
                 <CodeBlock code={finding.pocScript} />

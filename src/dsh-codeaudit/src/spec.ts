@@ -65,6 +65,15 @@ export function missingYakImplementations(poc: string, pocScript: string): strin
   return [...new Set(referenced)].filter(name => !pocScript.includes(name))
 }
 
+/**
+ * Whether a poc references a self-implemented hot-patch function through the
+ * yak(...) fuzztag — the condition for showing the pocScript block (built-in
+ * fuzztags like {{int(1,10)}} replay without any script).
+ */
+export function hasYakReferences(poc: string): boolean {
+  return /\{\{\s*yak\s*\(/.test(poc)
+}
+
 /** Non-empty id. */
 const id = z.string().min(1)
 
