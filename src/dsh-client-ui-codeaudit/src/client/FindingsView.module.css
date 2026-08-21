@@ -339,6 +339,22 @@
   margin: 10px 16px 0;
 }
 
+.pocFnChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pocFnChip {
+  font-family: var(--dsh-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 10.5px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
 .pocScriptLabel {
   font-size: 11px;
   font-weight: 600;

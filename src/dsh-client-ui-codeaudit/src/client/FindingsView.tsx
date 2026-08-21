@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react'
 import type { CodeauditProjection, CodeauditProjectionNode, CodeauditSeverity } from '../../../dsh-codeaudit/src/client.ts'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import { CodeBlock } from './CodeBlock.tsx'
-import { usesYakHotpatch } from './poc.ts'
+import { usesYakHotpatch, yakTagNames } from './poc.ts'
 import { FindingChainDrawer } from './FindingChainDrawer.tsx'
 import type { CodeauditKey } from './locales.ts'
 import css from './FindingsView.module.css'
@@ -99,6 +99,11 @@ function PocDrawer({
             {usesYakHotpatch(finding.poc ?? '') && (finding.pocScript ?? '') !== '' && (
               <section className={css.pocScriptBlock} data-testid="finding-poc-script">
                 <span className={css.pocScriptLabel}>{t('finding.pocScriptLabel')}</span>
+                <div className={css.pocFnChips} data-testid="finding-poc-functions">
+                  {yakTagNames(finding.poc ?? '').map(name => (
+                    <code key={name} className={css.pocFnChip}>{name}</code>
+                  ))}
+                </div>
                 <CodeBlock code={finding.pocScript} />
               </section>
             )}

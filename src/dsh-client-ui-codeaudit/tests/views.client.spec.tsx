@@ -247,6 +247,7 @@ describe('FindingsView yakit POC', () => {
     expect(drawer.textContent).toContain('可直接粘贴到 Yakit / Burp 重放')
     expect(screen.getByTestId('finding-poc-raw').textContent).toContain('POST /api/order HTTP/1.1')
     expect(screen.getByTestId('finding-poc-script').textContent).toContain('beforeRequest')
+    expect(screen.getByTestId('finding-poc-functions').textContent).toContain('payloadOf')
     expect(screen.getByTestId('finding-poc-copy')).toBeDefined()
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.queryByTestId('finding-poc-drawer')).toBeNull()

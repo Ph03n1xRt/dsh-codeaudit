@@ -12,3 +12,12 @@
 export function usesYakHotpatch(poc: string): boolean {
   return /\{\{\s*yak\s*\(/.test(poc)
 }
+
+/**
+ * The self-implemented hot-patch function names a poc references through
+ * yak(name|args) tags, in first-use order — shown as chips above the script
+ * block so each {{yak(...)}} in the raw maps to a visible implementation.
+ */
+export function yakTagNames(poc: string): string[] {
+  return [...new Set([...poc.matchAll(/\{\{\s*yak\s*\(\s*([A-Za-z_][\w]*)/g)].map(match => match[1]))]
+}
