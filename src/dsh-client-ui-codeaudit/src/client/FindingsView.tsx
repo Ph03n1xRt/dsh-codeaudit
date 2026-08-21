@@ -41,14 +41,14 @@ function PocDrawer({
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(finding.poc)
+      await navigator.clipboard.writeText(finding.poc ?? '')
       setCopyState('done')
     } catch {
       setCopyState('failed')
     }
   }
   const download = () => {
-    const blob = new Blob([finding.poc], { type: 'text/plain;charset=utf-8' })
+    const blob = new Blob([finding.poc ?? ''], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -65,7 +65,7 @@ function PocDrawer({
           <p className={css.pocKicker}>{t('finding.poc')}</p>
           <button type="button" className={css.close} aria-label="关闭" onClick={onClose}>×</button>
         </header>
-        {finding.poc === '' ? (
+        {(finding.poc ?? '') === '' ? (
           <p className={css.pocEmpty} data-testid="finding-poc-empty">{t('finding.pocEmpty')}</p>
         ) : (
           <>
@@ -79,10 +79,10 @@ function PocDrawer({
               <p className={css.pocMetaLine}>{t('report.location')}: <code>{finding.location}</code></p>
               {finding.cwe !== '' && <p className={css.pocMetaLine}>{t('report.cwe')}: {finding.cwe}</p>}
             </section>
-            {finding.pocNote !== '' && (
+            {(finding.pocNote ?? '') !== '' && (
               <section className={css.pocNoteCard} data-testid="finding-poc-note">
                 <span className={css.pocNoteLabel}>{t('finding.pocNoteLabel')}</span>
-                <p className={css.pocNoteText}>{finding.pocNote}</p>
+                <p className={css.pocNoteText}>{finding.pocNote ?? ''}</p>
               </section>
             )}
             <div className={css.pocActions}>
@@ -94,7 +94,7 @@ function PocDrawer({
               </button>
             </div>
             {copyState === 'failed' && <p className={css.pocError} role="status">{t('finding.pocCopyFailed')}</p>}
-            <CodeBlock code={finding.poc} language="http" testId="finding-poc-raw" />
+            <CodeBlock code={finding.poc ?? ''} language="http" testId="finding-poc-raw" />
             <p className={css.pocNote}>{t('finding.pocHint')}</p>
           </>
         )}
@@ -174,7 +174,7 @@ export function FindingsView({ codeaudit, t }: FindingsViewProps) {
                   data-testid="codeaudit-finding-poc"
                   onClick={() => { setPocFinding(finding) }}
                 >
-                  {t('finding.poc')}{finding.poc === '' ? '' : ' ●'}
+                  {t('finding.poc')}{(finding.poc ?? '') === '' ? '' : ' ●'}
                 </button>
               </div>
             </li>
