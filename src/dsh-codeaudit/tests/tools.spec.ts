@@ -85,6 +85,19 @@ describe('codeaudit_set_engagement', () => {
     expect(state.assets).toEqual([expect.objectContaining({ value: 'legacy/shop-backend' })])
   })
 
+  it('re-declaring the same engagement only updates scope/stack and keeps the chain', async () => {
+    // Regression: a late stack fill re-declared the engagement and wiped the
+    // recorded chain (report degraded to "（仅任务，尚未展开）").
+    const { call } = await codeauditHarness()
+    await call('codeaudit_set_engagement', { target: 'shop-backend', objective: 'audit' }, SESSION_ID)
+    await call('codeaudit_add_intent', { engagementId: 'engagement-1', title: 'a' }, SESSION_ID)
+    await call('codeaudit_set_engagement', { target: 'shop-backend', objective: 'audit', stack: 'Java/Spring' }, SESSION_ID)
+    const view = await call('codeaudit_state', {}, SESSION_ID) as { engagement?: { stack: string }; counts: Record<string, number>; intents: unknown[] }
+    expect(view.engagement).toMatchObject({ stack: 'Java/Spring' })
+    expect(view.counts.intents).toBe(1)
+    expect(view.intents).toHaveLength(1)
+  })
+
   it('resets the whole audit graph when a new engagement is recorded', async () => {
     const { call } = await codeauditHarness()
     const { intentA } = await fullChain(call)
