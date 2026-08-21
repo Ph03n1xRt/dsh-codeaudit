@@ -1,0 +1,87 @@
+.root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action {
+  border: 1px solid var(--dsh-color-border, #e2e8f0);
+  background: var(--dsh-color-bg-elevated, #fff);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.action:hover {
+  border-color: var(--dsh-color-accent, #0284c7);
+}
+
+.error {
+  margin: 0;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.markdown {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid var(--dsh-color-border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--dsh-color-bg-elevated, #fff);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.markdown h1 {
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+
+.markdown h2 {
+  font-size: 14px;
+  margin: 16px 0 8px;
+}
+
+.markdown h3 {
+  font-size: 13px;
+  margin: 12px 0 6px;
+}
+
+.markdown p {
+  margin: 2px 0;
+  word-break: break-word;
+}
+
+.bullet {
+  padding-left: 12px;
+}
+
+.step {
+  padding-left: 24px;
+  opacity: 0.9;
+}

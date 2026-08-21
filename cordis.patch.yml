@@ -1,0 +1,41 @@
+# The dsh-codeaudit bundle patch: the code-audit surface over dsh-base +
+# dsh-web-app. The bundle is one self-contained package — every row (except
+# the official sqlite backend, pulled in as a dependency) resolves to a
+# subpath of the bundle package itself, so the whole thing installs from a
+# single tarball via `dsh plugin add`.
+#
+# The patch contributes three things:
+# 1. the sqlite backend row (the official @deepseek-ai/dsh-storage-sqlite
+#    package, declared as a dependency of this bundle so `dsh plugin add`
+#    installs it);
+# 2. the Web surface row (the per-session 代码审计 view tab), whose client face
+#    is the package's `./client` export;
+# 3. a storage-domain route selecting the sqlite backend for the `codeaudit`
+#    domain only — the override replaces the targeted row's whole config, so
+#    the host default backend is restated here.
+#
+# The host codeaudit plugin belongs exclusively to the `codeaudit` agent
+# preset. Registering it here as well duplicates its scoped tool catalog
+# whenever that preset is selected, causing client command invalidation loops.
+
+- insert:
+    - id: ui-codeaudit
+      name: 'dsh-codeaudit/ui-codeaudit'
+
+    - id: storage-sqlite
+      name: '@deepseek-ai/dsh-storage-sqlite'
+      config:
+        path: !!js dshHomePath('storages', 'codeaudit-sessions.db')
+
+- id: storage-domain
+  config:
+    backend: json
+    routes:
+      codeaudit: sqlite
+
+# DSH rc.6 replaces this row's configured roots with its bundled preset root
+# during profile composition. `preset-root` adds this package's read-only root
+# after `agent-presets` is constructed, without copying files into DSH_HOME.
+- insert:
+    - id: codeaudit-preset-root
+      name: 'dsh-codeaudit/preset-root'

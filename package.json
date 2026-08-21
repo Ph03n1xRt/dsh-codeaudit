@@ -1,0 +1,95 @@
+{
+  "name": "dsh-codeaudit",
+  "description": "DSH 代码审计模式：测绘代码资产、追踪数据流证据、记录漏洞链路与代码片段，并在 Web 中可视化展示。",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./codeaudit": "./lib/codeaudit.js",
+    "./preset-root": "./lib/preset-root.js",
+    "./ui-codeaudit": "./lib/ui-codeaudit.js",
+    "./ui-codeaudit/package.json": "./package.json",
+    "./client": "./lib/ui-codeaudit.client.js",
+    "./invariant": "./lib/invariant.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/**/*.js",
+    "preset/codeaudit/**",
+    "cordis.patch.yml"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@deepseek-ai/dsh-storage-sqlite": "0.1.0-rc.6",
+    "zod": "^4.4.3"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ],
+      "platform": "web"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-invariants": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-storage": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-storage-domain": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-tools": "0.1.0-rc.6"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "vitest run",
+    "check": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-agent": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-brand": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-client-locale": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-client-runtime": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-client-ui-conversation": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-client-ui-primitives": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-client-ui-slots": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-code-runtime": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-invariants": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-llm": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-scope": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-session": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-session-projection": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-storage": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-storage-domain": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-system-prompt": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-timeout": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-tools": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-typert-protocol": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-user-approval": "^0.1.0-rc.6",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.1.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^26.2.0",
+    "@types/react": "~18.3.1",
+    "@xyflow/react": "^12.11.3",
+    "esbuild": "^0.25.0",
+    "js-yaml": "4.3.1",
+    "jsdom": "^26.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "zod": "^4.4.3"
+  },
+  "repository": {
+    "url": "git+https://github.com/Ph03n1xRt/dsh-codeaudit.git",
+    "type": "git"
+  },
+  "author": "Ph03n1xRt"
+}
