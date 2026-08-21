@@ -19,7 +19,8 @@ import css from './FindingsView.module.css'
 /** The finding-shaped member of the node union. */
 type FindingNode = Extract<CodeauditProjectionNode, { kind: 'finding' }>
 
-/** A right drawer over one finding's replayable HTTP-raw POC. */
+/** A right drawer over one finding's replayable HTTP-raw POC: meta card on
+ * top, quiet actions, the PURE raw as its own block, a hint footnote. */
 function PocDrawer({
   finding,
   t,
@@ -61,18 +62,25 @@ function PocDrawer({
       <button type="button" className={css.backdrop} aria-hidden="true" tabIndex={-1} onClick={onClose} />
       <aside className={css.pocDrawer} aria-label={t('finding.pocTitle')}>
         <header className={css.pocHeader}>
-          <div className={css.pocHeaderText}>
-            <p className={css.pocHintLine}>{t('finding.pocHint')}</p>
-            <h3 className={css.pocTitle}>{finding.title}<span className={css.pocId}>{finding.id}</span></h3>
-          </div>
+          <p className={css.pocKicker}>{t('finding.poc')}</p>
           <button type="button" className={css.close} aria-label="关闭" onClick={onClose}>×</button>
         </header>
         {finding.poc === '' ? (
           <p className={css.pocEmpty} data-testid="finding-poc-empty">{t('finding.pocEmpty')}</p>
         ) : (
           <>
+            <section className={css.pocMeta} data-testid="finding-poc-meta">
+              <div className={css.pocMetaTitle}>
+                <span className={css.severity} data-severity={finding.severity}>{t(SEVERITY_LABELS[finding.severity])}</span>
+                <span className={css.status} data-status={finding.status}>{t(finding.status === 'confirmed' ? 'status.confirmed' : 'status.suspected')}</span>
+                <h3 className={css.pocTitleText}>{finding.title}</h3>
+                <span className={css.pocId}>{finding.id}</span>
+              </div>
+              <p className={css.pocMetaLine}>{t('report.location')}: <code>{finding.location}</code></p>
+              {finding.cwe !== '' && <p className={css.pocMetaLine}>{t('report.cwe')}: {finding.cwe}</p>}
+            </section>
             <div className={css.pocActions}>
-              <button type="button" className={css.pocAction} data-testid="finding-poc-copy" onClick={() => { void copy() }}>
+              <button type="button" className={css.pocAction} data-state={copyState === 'done' ? 'done' : undefined} data-testid="finding-poc-copy" onClick={() => { void copy() }}>
                 {t(copyState === 'done' ? 'finding.pocCopied' : 'finding.pocCopy')}
               </button>
               <button type="button" className={css.pocAction} data-testid="finding-poc-download" onClick={download}>
@@ -81,6 +89,7 @@ function PocDrawer({
             </div>
             {copyState === 'failed' && <p className={css.pocError} role="status">{t('finding.pocCopyFailed')}</p>}
             <CodeBlock code={finding.poc} language="http" testId="finding-poc-raw" />
+            <p className={css.pocNote}>{t('finding.pocHint')}</p>
           </>
         )}
       </aside>

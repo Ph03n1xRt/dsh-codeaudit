@@ -181,23 +181,8 @@
   border-bottom: 1px solid var(--dsh-color-border, #e2e8f0);
 }
 
-.pocHeaderText {
-  display: grid;
-  gap: 4px;
-}
 
-.pocHintLine {
-  margin: 0;
-  font-size: 11px;
-  opacity: 0.6;
-}
 
-.pocTitle {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  word-break: break-all;
-}
 
 .pocId {
   margin-left: 8px;
@@ -228,18 +213,54 @@
   padding: 10px 16px 0;
 }
 
-.pocAction {
-  border: 1px solid var(--dsh-color-border, #e2e8f0);
-  background: var(--dsh-color-bg-elevated, #fff);
-  border-radius: 8px;
-  padding: 5px 12px;
-  font-size: 12px;
-  cursor: pointer;
-  color: inherit;
+
+
+
+
+.pocKicker {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
 }
 
-.pocAction:hover {
-  border-color: var(--dsh-color-accent, #0284c7);
+.pocMeta {
+  display: grid;
+  gap: 6px;
+  margin: 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--dsh-color-border, #e2e8f0);
+  border-radius: 10px;
+  background: var(--dsh-color-bg, #f8fafc);
+}
+
+.pocMetaTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pocTitleText {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.pocMetaLine {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.pocMetaLine code {
+  font-family: var(--dsh-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 11.5px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--dsh-color-bg-subtle, #f1f5f9);
+  word-break: break-all;
 }
 
 .pocError {
@@ -249,3 +270,41 @@
   color: #dc2626;
 }
 
+.pocActions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px 0;
+}
+
+/* Ghost buttons matching the panel's quiet controls. */
+.pocAction {
+  border: 1px solid var(--dsh-color-border, #e2e8f0);
+  background: transparent;
+  color: inherit;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.pocAction:hover {
+  background: var(--dsh-color-bg-subtle, #f1f5f9);
+}
+
+.pocAction[data-state='done'] {
+  color: #15803d;
+}
+
+.pocDrawer .pocError {
+  padding: 6px 16px 0;
+}
+
+.pocDrawer pre {
+  margin: 10px 16px 0;
+}
+
+.pocNote {
+  margin: 8px 16px 16px;
+  font-size: 11.5px;
+  opacity: 0.6;
+}
