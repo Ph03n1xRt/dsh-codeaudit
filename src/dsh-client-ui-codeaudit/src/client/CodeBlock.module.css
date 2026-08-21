@@ -1,9 +1,5 @@
-.wrap {
-  position: relative;
-  min-width: 0;
-}
-
 .block {
+  position: relative;
   margin: 0;
   padding: 10px 12px;
   font-family: var(--dsh-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
@@ -16,43 +12,13 @@
   background: #0d1117;
   border: 1px solid #263041;
   border-radius: 8px;
+  /* highlightjs-copy theme handoff: the plugin button blends into the panel. */
+  --hljs-theme-background: #0d1117;
+  --hljs-theme-color: #e6edf3;
 }
 
 /* The github-dark theme paints its own panel; blend into the block. */
 .block :global(.hljs) {
   background: transparent;
   padding: 0;
-}
-
-/* Quiet action links in the panel's top-right corner: plain low-contrast
- * text, always visible, no borders, no boxes, no reveals. */
-.actions {
-  position: absolute;
-  top: 5px;
-  right: 8px;
-  z-index: 1;
-  display: flex;
-  gap: 8px;
-}
-
-.action {
-  border: none;
-  background: transparent;
-  color: rgba(230, 237, 243, 0.45);
-  padding: 0;
-  font-size: 10.5px;
-  line-height: 1.4;
-  cursor: pointer;
-}
-
-.action:hover {
-  color: rgba(230, 237, 243, 0.9);
-}
-
-.action[data-state='done'] {
-  color: #3fb950;
-}
-
-.action[data-state='failed'] {
-  color: #f85149;
 }

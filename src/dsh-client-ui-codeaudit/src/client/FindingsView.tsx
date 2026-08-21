@@ -39,7 +39,15 @@ function PocDrawer({
     return () => { window.removeEventListener('keydown', closeOnEscape) }
   }, [onClose])
 
-  const labels = { copy: t('finding.pocCopy'), copied: t('finding.pocCopied'), failed: t('finding.pocCopyFailed') }
+  const downloadPoc = () => {
+    const blob = new Blob([finding.poc ?? ''], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `poc-${finding.id}.txt`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className={css.pocLayer} data-testid="finding-poc-drawer">
@@ -69,15 +77,7 @@ function PocDrawer({
                 <p className={css.pocNoteText}>{finding.pocNote ?? ''}</p>
               </section>
             )}
-            <CodeBlock
-              code={finding.poc ?? ''}
-              language="http"
-              testId="finding-poc-raw"
-              copy={labels}
-              copyTestId="finding-poc-copy"
-              download={`poc-${finding.id}.txt`}
-              downloadTestId="finding-poc-download"
-            />
+            <CodeBlock code={finding.poc ?? ''} language="http" testId="finding-poc-raw" />
             {usesYakHotpatch(finding.poc ?? '') && (finding.pocScript ?? '') !== '' && (
               <section className={css.pocScriptBlock} data-testid="finding-poc-script">
                 <span className={css.pocScriptLabel}>{t('finding.pocScriptLabel')}</span>
@@ -86,10 +86,13 @@ function PocDrawer({
                     <code key={name} className={css.pocFnChip}>{name}</code>
                   ))}
                 </div>
-                <CodeBlock code={finding.pocScript} copy={labels} copyTestId="finding-poc-script-copy" />
+                <CodeBlock code={finding.pocScript} />
               </section>
             )}
-            <p className={css.pocNote}>{t('finding.pocHint')}</p>
+            <p className={css.pocNote}>
+              {t('finding.pocHint')}
+              <button type="button" className={css.pocDownloadLink} data-testid="finding-poc-download" onClick={downloadPoc}>· {t('finding.pocDownload')}</button>
+            </p>
           </>
         )}
       </aside>

@@ -2,37 +2,29 @@
  * CodeBlock: syntax-highlighted, frozen code/POC rendering. The highlight.js
  * "common" bundle covers the languages an audit meets in the wild and
  * auto-detects the snippet's language; the POC renders with the dedicated
- * `http` grammar. highlight.js escapes its input while producing markup, so
- * the generated HTML is safe to inject.
- *
- * `copy`/`download` mount quiet action buttons in the block's top-right
- * corner — the single place copy affordances live across the panel.
+ * `http` grammar. The copy button is highlightjs-copy's themed plugin button
+ * (inherits the panel colors through --hljs-theme-* variables), so its look
+ * is the plugin's, not hand-rolled CSS.
  */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import hljs from 'highlight.js/lib/common'
 import http from 'highlight.js/lib/languages/http'
-// Global class names (.hljs-*): rides the raw-CSS inline channel.
+import CopyButtonPlugin from 'highlightjs-copy'
+// Global class names (.hljs-copy-*): rides the raw-CSS inline channel.
+import 'highlightjs-copy/dist/highlightjs-copy.min.css'
+// The github-dark theme for the code surface itself (global .hljs-* names).
 import 'highlight.js/styles/github-dark.css'
 import css from './CodeBlock.module.css'
 
 hljs.registerLanguage('http', http)
-
-/** Highlight one payload: fixed language when given, auto-detect otherwise. */
-function highlightOf(code: string, language: string | undefined): string {
-  try {
-    if (language !== undefined) return hljs.highlight(code, { language, ignoreIllegals: true }).value
-    return hljs.highlightAuto(code).value
-  } catch {
-    return code
-  }
-}
-
-/** Minimal copy-button copy (zh-first; the panel's locale is not threaded here). */
-export interface CodeBlockCopyLabels {
-  readonly copy: string
-  readonly copied: string
-  readonly failed: string
+let pluginRegistered = false
+/** Register the copy plugin on first use — its constructor reads `document`
+ * (for <html lang>), so this must not run at module load in node contexts. */
+function ensureCopyPlugin(): void {
+  if (pluginRegistered) return
+  hljs.addPlugin(new CopyButtonPlugin())
+  pluginRegistered = true
 }
 
 export interface CodeBlockProps {
@@ -40,64 +32,24 @@ export interface CodeBlockProps {
   /** Fixed highlight language ('http' for POC raw); omit to auto-detect. */
   readonly language?: string
   readonly testId?: string
-  /** Show the top-right copy button with these labels. */
-  readonly copy?: CodeBlockCopyLabels
-  /** Also offer a download for this filename (top-right, next to copy). */
-  readonly download?: string
-  /** Stable test ids for the action buttons (defaults: codeblock-copy/download). */
-  readonly copyTestId?: string
-  readonly downloadTestId?: string
 }
 
-export function CodeBlock({ code, language, testId, copy, download, copyTestId = 'codeblock-copy', downloadTestId = 'codeblock-download' }: CodeBlockProps) {
-  const html = useMemo(() => code === '' ? '' : highlightOf(code, language), [code, language])
-  const [state, setState] = useState<'idle' | 'done' | 'failed'>('idle')
-
-  const onCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(code)
-      setState('done')
-    } catch {
-      setState('failed')
-    }
-    window.setTimeout(() => { setState('idle') }, 1600)
-  }
-  const onDownload = () => {
-    const blob = new Blob([code], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = download ?? 'snippet.txt'
-    link.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const hasActions = copy !== undefined || download !== undefined
+export function CodeBlock({ code, language, testId }: CodeBlockProps) {
+  const codeRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const el = codeRef.current
+    if (el === null || code === '') return
+    ensureCopyPlugin()
+    // Re-highlight on content change: reset the element, let highlight.js
+    // (and the copy plugin, via its after:highlightElement hook) rebuild.
+    el.textContent = code
+    el.removeAttribute('data-highlighted')
+    if (language !== undefined) el.dataset.langHint = language
+    hljs.highlightElement(el)
+  }, [code, language])
   return (
-    <div className={css.wrap}>
-      {hasActions && (
-        <div className={css.actions}>
-          {copy !== undefined && (
-            <button
-              type="button"
-              className={css.action}
-              data-state={state === 'idle' ? undefined : state}
-              data-testid={copyTestId}
-              onClick={() => { void onCopy() }}
-            >
-              {state === 'done' ? copy.copied : state === 'failed' ? copy.failed : copy.copy}
-            </button>
-          )}
-          {download !== undefined && (
-            <button type="button" className={css.action} data-testid={downloadTestId} onClick={onDownload}>
-              .txt
-            </button>
-          )}
-        </div>
-      )}
-      <pre className={css.block} data-testid={testId}>
-        <code className="hljs" dangerouslySetInnerHTML={{ __html: html }} />
-      </pre>
-    </div>
+    <pre className={css.block} data-testid={testId}>
+      <code ref={codeRef} className="hljs" />
+    </pre>
   )
 }

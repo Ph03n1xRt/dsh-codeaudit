@@ -338,3 +338,13 @@
   font-weight: 600;
   opacity: 0.65;
 }
+
+.pocDownloadLink {
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 0 0 0 8px;
+  font-size: 11.5px;
+  cursor: pointer;
+  text-decoration: underline;
+}
