@@ -31,7 +31,6 @@ function PocDrawer({
   readonly t: PropsLocale<'codeaudit'>['t']
   readonly onClose: () => void
 }) {
-  const [copyState, setCopyState] = useState<'idle' | 'done' | 'failed'>('idle')
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
@@ -40,23 +39,7 @@ function PocDrawer({
     return () => { window.removeEventListener('keydown', closeOnEscape) }
   }, [onClose])
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(finding.poc ?? '')
-      setCopyState('done')
-    } catch {
-      setCopyState('failed')
-    }
-  }
-  const download = () => {
-    const blob = new Blob([finding.poc ?? ''], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `poc-${finding.id}.txt`
-    link.click()
-    URL.revokeObjectURL(url)
-  }
+  const labels = { copy: t('finding.pocCopy'), copied: t('finding.pocCopied'), failed: t('finding.pocCopyFailed') }
 
   return (
     <div className={css.pocLayer} data-testid="finding-poc-drawer">
@@ -86,16 +69,15 @@ function PocDrawer({
                 <p className={css.pocNoteText}>{finding.pocNote ?? ''}</p>
               </section>
             )}
-            <div className={css.pocActions}>
-              <button type="button" className={css.pocAction} data-state={copyState === 'done' ? 'done' : undefined} data-testid="finding-poc-copy" onClick={() => { void copy() }}>
-                {t(copyState === 'done' ? 'finding.pocCopied' : 'finding.pocCopy')}
-              </button>
-              <button type="button" className={css.pocAction} data-testid="finding-poc-download" onClick={download}>
-                {t('finding.pocDownload')}
-              </button>
-            </div>
-            {copyState === 'failed' && <p className={css.pocError} role="status">{t('finding.pocCopyFailed')}</p>}
-            <CodeBlock code={finding.poc ?? ''} language="http" testId="finding-poc-raw" />
+            <CodeBlock
+              code={finding.poc ?? ''}
+              language="http"
+              testId="finding-poc-raw"
+              copy={labels}
+              copyTestId="finding-poc-copy"
+              download={`poc-${finding.id}.txt`}
+              downloadTestId="finding-poc-download"
+            />
             {usesYakHotpatch(finding.poc ?? '') && (finding.pocScript ?? '') !== '' && (
               <section className={css.pocScriptBlock} data-testid="finding-poc-script">
                 <span className={css.pocScriptLabel}>{t('finding.pocScriptLabel')}</span>
@@ -104,7 +86,7 @@ function PocDrawer({
                     <code key={name} className={css.pocFnChip}>{name}</code>
                   ))}
                 </div>
-                <CodeBlock code={finding.pocScript} />
+                <CodeBlock code={finding.pocScript} copy={labels} copyTestId="finding-poc-script-copy" />
               </section>
             )}
             <p className={css.pocNote}>{t('finding.pocHint')}</p>

@@ -1,3 +1,8 @@
+.wrap {
+  position: relative;
+  min-width: 0;
+}
+
 .block {
   margin: 0;
   padding: 10px 12px;
@@ -17,4 +22,36 @@
 .block :global(.hljs) {
   background: transparent;
   padding: 0;
+}
+
+.actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: flex;
+  gap: 4px;
+}
+
+.action {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(13, 17, 23, 0.85);
+  color: #cbd5e1;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.action:hover {
+  border-color: rgba(203, 213, 225, 0.7);
+  color: #f1f5f9;
+}
+
+.action[data-state='done'] {
+  color: #4ade80;
+}
+
+.action[data-state='failed'] {
+  color: #f87171;
 }

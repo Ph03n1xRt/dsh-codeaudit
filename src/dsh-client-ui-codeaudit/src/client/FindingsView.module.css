@@ -207,11 +207,6 @@
   opacity: 0.7;
 }
 
-.pocActions {
-  display: flex;
-  gap: 8px;
-  padding: 10px 16px 0;
-}
 
 
 
@@ -270,26 +265,9 @@
   color: #dc2626;
 }
 
-.pocActions {
-  display: flex;
-  gap: 8px;
-  padding: 10px 16px 0;
-}
 
 /* Ghost buttons matching the panel's quiet controls. */
-.pocAction {
-  border: 1px solid var(--dsh-color-border, #e2e8f0);
-  background: transparent;
-  color: inherit;
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 11.5px;
-  cursor: pointer;
-}
 
-.pocAction:hover {
-  background: var(--dsh-color-bg-subtle, #f1f5f9);
-}
 
 .pocAction[data-state='done'] {
   color: #15803d;
