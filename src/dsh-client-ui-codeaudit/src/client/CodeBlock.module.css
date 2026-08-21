@@ -1,4 +1,6 @@
 .block {
+  position: relative;
+  overflow: hidden;
   margin: 0;
   padding: 0;
   font-family: var(--dsh-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
@@ -16,11 +18,45 @@
 /* The plugin reads its theme (background/color/padding) from the CODE
  * element's computed style, and its button margin is calc(padding / 2) —
  * a SINGLE value. So the code element carries the panel colors and a
- * uniform padding; the pre is just the bordered shell (the plugin's
- * .hljs-copy-wrapper class adds position/overflow to it). */
+ * uniform padding. */
 .block :global(.hljs) {
   display: block;
   background: #0d1117;
   color: #e6edf3;
   padding: 12px;
+}
+
+/* Pin the copy button ourselves: 6px inside the top-right corner, no
+ * slide-in animation. The plugin's own positioning (autohide translateX
+ * + computed margins) misplaces the button against this panel; these
+ * higher-specificity overrides fix the geometry while keeping the
+ * plugin's icon and copied-state behavior. */
+.block :global(.hljs-copy-container) {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  transform: none !important;
+  transition: none !important;
+}
+
+.block :global(.hljs-copy-button) {
+  margin: 0;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  background: #161b22;
+  color: #7d8590;
+}
+
+.block :global(.hljs-copy-button:hover) {
+  color: #e6edf3;
+  background: #21262d;
+}
+
+.block :global(.hljs-copy-button[data-copied='true']) {
+  width: auto;
+  padding: 0 8px;
+  text-indent: 0;
+  color: #3fb950;
 }

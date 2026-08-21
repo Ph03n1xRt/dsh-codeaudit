@@ -1,7 +1,7 @@
 {
   "name": "dsh-codeaudit",
   "description": "DSH 代码审计模式：测绘代码资产、追踪数据流证据、记录漏洞链路与代码片段，并在 Web 中可视化展示。",
-  "version": "1.0.3-test.19",
+  "version": "1.0.3-test.20",
   "type": "module",
   "main": "./lib/index.js",
   "exports": {
